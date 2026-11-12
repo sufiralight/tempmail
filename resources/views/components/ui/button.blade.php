@@ -1,4 +1,4 @@
-@props(['variant' => 'primary', 'size' => 'md', 'type' => 'button', 'href' => null, 'disabled' => false, 'loading' => false, 'busyOnSubmit' => false, 'icon' => null])
+@props(['variant' => 'primary', 'size' => 'md', 'type' => 'button', 'href' => null, 'disabled' => false, 'loading' => false, 'busyOnSubmit' => false, 'loadingLabel' => null, 'icon' => null])
 
 @php
     $variants = [
@@ -20,6 +20,11 @@
         @if($busyOnSubmit && $type === 'submit' && $href === null) data-ui-submit @endif>
         @if ($loading || $busyOnSubmit)<x-ui.spinner class="ui-button-spinner" :size="16" />@endif
         @if ($icon)<x-ui.icon :name="$icon" :size="16" class="ui-button-icon" />@endif
-        {{ $slot }}
+        @if ($loadingLabel)
+            <span class="ui-button-ready-label">{{ $slot }}</span>
+            <span class="ui-button-loading-label">{{ $loadingLabel }}</span>
+        @else
+            {{ $slot }}
+        @endif
     </button>
 @endif

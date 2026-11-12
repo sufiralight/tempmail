@@ -1,7 +1,7 @@
 # Installer
 
-Implement the [installation flow](../docs/installation.md) in Prompt 04. Verify the database before exposing the first Super Admin step. Require deployment-operator authorization established outside the public application and bind progress to that authorized session. Keep routes closed by default, including when installation status is unknown.
+Use the [installation state machine](../docs/installation.md). Prompt 04 implements database verification and a private handoff. Prompt 05 owns the Super Admin screen, migrations, and finalization.
 
-Keep CSRF enabled and throttle verification and privileged writes. Validate the configured production host and trusted proxy boundary. Accept an empty password for an explicitly local database and support localhost and 127.0.0.1. Protect submitted connection details from logs, URLs, and session flash data. Generate the application key during authorized new installation.
+Require the private deployment gate on every installer request. Keep the direct peer, raw Host, HTTPS, and authorized production database endpoint checks intact. Local loopback permits an empty database password. Protect CSRF, body limits, rate limiting, and host-only encrypted file sessions. Keep connection settings out of flashed input, logs, responses, and browser state.
 
-Serialize installation writes with a lock whose lifetime covers finalization. Persist progress privately and reconcile with the database before retrying. Close every installer route after completion. Require operator recovery for missing environment files on an existing instance. Avoid a public setup-credential form and preserve the original application key during recovery.
+Finalization must recheck the verified lease and use the same exclusive lock. Preserve existing configuration, reconcile partial writes, record durable completion, and retire temporary state. Missing .env requires operator-controlled recovery when prior installation evidence exists or state is uncertain.

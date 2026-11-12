@@ -42,7 +42,7 @@ Use a new identifier when replacing a decision and link both records. Dates belo
 
 **Date** 2026-11-12
 
-**Status** Accepted requirement, implementation planned
+**Status** Accepted, database verification implemented and finalization planned
 
 **Context** Shared-hosting operators need browser installation and must retain control after configuration loss.
 

@@ -4,7 +4,7 @@ The implemented catalog lives in [resources/views/components/ui](../resources/vi
 
 | Component | API and accessibility contract |
 | --- | --- |
-| button | variant primary, secondary, outline, ghost or destructive. size sm, md (default) or lg. type defaults to button. href renders a link unless disabled or loading. icon is optional. Give icon-only controls an aria-label. Opt into native form submission protection with busy-on-submit on a submit button. |
+| button | variant primary, secondary, outline, ghost or destructive. size sm, md (default) or lg. type defaults to button. href renders a link unless disabled or loading. icon is optional. Give icon-only controls an aria-label. Opt into native form submission protection with busy-on-submit on a submit button and supply loading-label for action-specific loading text. |
 | icon | name, numeric size (default 20), optional label. Decorative by default. A supplied label makes the SVG a named image. |
 | input, textarea, select | id, name, label, help, error, required, leading-icon, trailing-icon and native attributes such as disabled and autocomplete. Inputs accept type and value, textarea accepts value or a slot, and select takes option markup. Assign a label or an accessible name. Help and validation IDs are included in aria-describedby. |
 | password-field | Shares the input API and defaults autocomplete to current-password. Override with new-password for creation and reset. A pressed-state toggle preserves the value and leaves keyboard focus on the toggle. The component omits the value attribute. |
