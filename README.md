@@ -9,6 +9,8 @@
 
 ## Temp Mail development
 
+See the [project overview](docs/project-overview.md), [developer instructions](AGENTS.md), and [deployment guide](docs/deployment.md).
+
 Use PHP 8.5 with PDO MySQL, Composer, and a local Node.js version supported by Vite. Run `composer setup` to prepare dependencies, the environment file, and assets. If `APP_KEY` is empty, run `php artisan key:generate`. Start the development servers with `composer dev`. Run `composer test`, `composer analyse`, and `vendor/bin/pint --test` to check changes.
 
 The application can serve requests before MySQL is configured. For local MySQL or MariaDB, set `DB_CONNECTION=mysql`, `DB_HOST=127.0.0.1`, `DB_PORT=3306`, `DB_DATABASE=tempmail`, and `DB_USERNAME=root` in your private `.env` if those values match your local server. Leave `DB_PASSWORD=` empty if that account has no password. The database installer is scheduled for Prompt 04.

@@ -1,0 +1,25 @@
+# Testing
+
+The current [PHPUnit configuration](../phpunit.xml) uses SQLite in memory and array sessions and cache. The starter tests include a root-route smoke test and a trivial unit example. The [CI workflow](../.github/workflows/checks.yml) builds assets and runs PHPUnit, Larastan, and Pint.
+
+| Check | Command |
+| --- | --- |
+| Unit and feature suite | composer test |
+| Focused behavior | php artisan test --filter=TestName --no-interaction |
+| Static analysis | composer analyse |
+| Formatting | vendor/bin/pint --test (Windows: vendor/bin/pint.bat --test) |
+| Clean release build | npm ci, then npm run build |
+| Routes | php artisan route:list --no-interaction |
+
+Check both Vite entry points and referenced files in the production manifest. Use a local or CI-generated key where the test needs encrypted sessions or cookies. Use isolated databases for migration tests and never point automated tests at a production database.
+
+| Area | Coverage to add with the feature |
+| --- | --- |
+| Installer | Unavailable database, empty local password, missing environment on an existing instance, unauthorized access, competing writes, interrupted finalization and replay |
+| Authentication and authorization | Session regeneration and logout, token expiry, throttling, guest access, cross-owner denials, explicit administrator abilities |
+| Schema | Fresh migrate, upgrade with data, constraints, recoverable failures on supported engines |
+| Components | Rendered variants and defaults, forwarded attributes, accessible labels and error state, browser interactions and theme persistence |
+| Media | MIME mismatch, invalid image, limits, forbidden access, referenced deletion and partial storage failure |
+| Accessibility | Automated scan plus the [manual checks](accessibility.md) in both themes |
+
+Report each command executed, outcome, and coverage gaps. SQLite smoke tests alone do not establish MySQL or MariaDB compatibility.

@@ -1,0 +1,9 @@
+# Database
+
+MySQL and MariaDB are the deployment targets. [Database configuration](../config/database.php) reads DB_CONNECTION, DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME and DB_PASSWORD. Use mysql for a compatible server or the configured mariadb driver as appropriate. Local TCP commonly uses 127.0.0.1 and port 3306. Use localhost when appropriate for the platform or server configuration and set DB_SOCKET explicitly when needed. DB_PASSWORD= is valid for a local account configured without a password. Production uses a dedicated password-protected account.
+
+The [starter migrations](../database/migrations) define users, password reset tokens, sessions, cache and locks, jobs, batches, and failed jobs. These files describe available schema changes. An environment's applied schema is determined by its migration ledger. File sessions, file cache, and synchronous queues are current defaults. Switch to database-backed storage after applying its required migrations.
+
+Keep each feature's schema under its ownership in Laravel's migration path. Add indexes for access patterns and unique constraints for invariants. Specify foreign key delete behavior deliberately. Use transactions for related data writes, coordinate concurrent updates, and plan retention and backfills before deploying destructive changes.
+
+Apply migrations through the authorized [installer](installation.md) or a controlled release with backup, reviewed migration order, and rollback or restore plan. Where shell is available, use php artisan migrate:status and php artisan migrate --force for a reviewed production release. Where shell is unavailable, use an approved provider or application update mechanism once available. Keep HTTP startup independent of migrations. Inspect the ledger and actual schema after interruption and surface a redacted diagnostic with the failed migration and recovery action. Test fresh installation and upgrade paths on isolated MySQL and MariaDB databases.
