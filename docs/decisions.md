@@ -54,7 +54,7 @@ Use a new identifier when replacing a decision and link both records. Dates belo
 
 **Date** 2026-11-12
 
-**Status** Accepted requirement, catalog implementation planned
+**Status** Accepted
 
 **Context** Multiple features will reuse the same controls and layouts.
 

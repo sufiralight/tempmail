@@ -27,6 +27,10 @@
     --color-border: var(--theme-border);
     --color-primary: var(--theme-primary);
     --color-on-primary: var(--theme-on-primary);
+    --color-secondary-text: var(--theme-secondary);
+    --color-muted: var(--theme-muted);
+    --color-focus: var(--theme-focus);
+    --color-control-border: var(--theme-control-border);
 }
 
 @layer base {
@@ -37,7 +41,11 @@
         --theme-foreground: var(--color-zinc-900);
         --theme-border: var(--color-zinc-200);
         --theme-primary: var(--color-zinc-900);
-        --theme-on-primary: var(--color-zinc-50);
+        --theme-on-primary: var(--color-white);
+        --theme-secondary: var(--color-zinc-500);
+        --theme-muted: var(--color-zinc-100);
+        --theme-focus: var(--color-zinc-600);
+        --theme-control-border: var(--color-zinc-500);
     }
 
     :root {
@@ -49,10 +57,120 @@
             --theme-border: var(--color-zinc-700);
             --theme-primary: var(--color-zinc-50);
             --theme-on-primary: var(--color-zinc-900);
+            --theme-secondary: var(--color-zinc-400);
+            --theme-muted: var(--color-zinc-800);
+            --theme-focus: var(--color-zinc-300);
+            --theme-control-border: var(--color-zinc-400);
         }
     }
 
     [x-cloak] {
         display: none !important;
     }
+}
+
+@theme {
+    --radius-ui: 0.5rem;
+    --radius-panel: 0.75rem;
+    --spacing-control: 2.75rem;
+    --spacing-gutter: 1.25rem;
+    --shadow-panel: 0 1px 2px rgb(0 0 0 / 0.08);
+    --shadow-overlay: 0 8px 28px rgb(0 0 0 / 0.14);
+    --ease-ui: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer base {
+    :root { --ui-duration: 150ms; }
+    body { @apply bg-page font-sans text-foreground antialiased; }
+    :focus-visible { @apply outline-2 outline-offset-2 outline-focus; }
+    ::selection { @apply bg-primary text-on-primary; }
+    .ui-dialog-open { overflow: hidden; }
+
+    @media (prefers-reduced-motion: reduce) {
+        :root { --ui-duration: 0ms; }
+    }
+}
+
+@layer components {
+    .ui-container { @apply mx-auto w-full max-w-6xl px-gutter sm:px-8; }
+    .ui-display-title { @apply text-4xl font-semibold tracking-tight sm:text-6xl; }
+    .ui-page-title { @apply text-3xl font-semibold tracking-tight sm:text-4xl; }
+    .ui-section-title { @apply text-xl font-semibold tracking-tight; }
+    .ui-card-title { @apply text-base font-semibold tracking-tight; }
+    .ui-help { @apply text-sm leading-relaxed text-secondary-text; }
+    .ui-label { @apply text-sm font-medium; }
+    .ui-error { @apply text-sm font-semibold; }
+    .ui-card { @apply rounded-panel border border-border bg-surface p-5 shadow-panel sm:p-6; }
+    .ui-icon-tile { @apply inline-grid size-control place-items-center rounded-ui border border-border bg-muted; }
+
+    .ui-button {
+        @apply inline-flex min-w-8 shrink-0 items-center justify-center gap-2 rounded-ui border border-transparent px-3 text-center text-sm font-medium leading-tight;
+        transition: background-color var(--ui-duration) var(--ease-ui), opacity var(--ui-duration) var(--ease-ui);
+    }
+    .ui-button-sm { @apply min-h-8; }
+    .ui-button-md { @apply min-h-control; }
+    .ui-button-lg { @apply min-h-12 px-4; }
+    .ui-button-primary { @apply bg-primary text-on-primary hover:opacity-85 active:opacity-75; }
+    .ui-button-secondary { @apply bg-muted text-foreground hover:border-control-border active:opacity-75; }
+    .ui-button-outline { @apply border-control-border bg-surface hover:bg-muted active:opacity-75; }
+    .ui-button-ghost { @apply hover:bg-muted active:opacity-75; }
+    .ui-button-destructive { @apply border-foreground bg-surface font-semibold text-foreground hover:bg-primary hover:text-on-primary active:opacity-85; }
+    .ui-button:disabled, .ui-button[data-loading=true] { @apply cursor-not-allowed opacity-55; }
+    .ui-button:not([data-loading=true]) .ui-button-spinner, .ui-button[data-loading=true] .ui-button-icon { display: none; }
+
+    .ui-field { @apply grid min-w-0 gap-1.5; }
+    .ui-control {
+        @apply min-h-control w-full min-w-0 rounded-ui border border-control-border bg-surface px-3 py-2 text-base text-foreground placeholder:text-secondary-text disabled:cursor-not-allowed disabled:opacity-55 sm:text-sm;
+    }
+    .ui-control:is([aria-invalid=true]) { @apply border-2 border-foreground; }
+    .ui-control-leading { @apply ps-9; }
+    .ui-control-trailing { @apply pe-12; }
+    .ui-control-icon { @apply pointer-events-none absolute top-1/2 -translate-y-1/2 text-secondary-text; }
+    .ui-control::file-selector-button { @apply me-3 cursor-pointer rounded-ui border border-control-border bg-muted px-2 py-1 text-foreground; }
+    .ui-password-toggle { @apply absolute inset-y-1 end-1 grid w-10 place-items-center rounded-ui hover:bg-muted disabled:opacity-55; }
+    .ui-choice { @apply inline-flex min-h-8 items-center gap-2 text-sm; }
+    .ui-choice-input { @apply size-4 accent-primary; }
+
+    .ui-dropdown { @apply relative inline-flex max-w-full; }
+    .ui-menu {
+        @apply absolute top-full z-30 mt-2 max-h-[min(20rem,50dvh)] w-44 max-w-[calc(100vw-2.5rem)] overflow-auto rounded-ui border border-border p-1 bg-surface shadow-overlay;
+        translate: var(--overlay-shift, 0px);
+    }
+    .ui-menu-above { @apply top-auto bottom-full mt-0 mb-2; }
+    .ui-menu-item {
+        @apply flex min-h-9 w-full items-center gap-2 rounded-ui px-2 text-start text-sm hover:bg-muted focus-visible:bg-muted disabled:opacity-55 aria-disabled:opacity-55;
+    }
+    .ui-dialog {
+        @apply fixed inset-0 m-auto max-h-[calc(100dvh-2.5rem)] w-[calc(100%-2.5rem)] max-w-lg overflow-auto rounded-panel border border-border bg-surface p-5 text-foreground shadow-overlay sm:p-6;
+    }
+    .ui-dialog::backdrop { background: rgb(0 0 0 / 0.5); }
+
+    .ui-badge { @apply inline-flex items-center gap-1.5 rounded-ui border border-transparent bg-muted px-2 py-0.5 text-xs font-medium; }
+    .ui-badge-outline { @apply border-border bg-transparent; }
+    .ui-badge-solid { @apply bg-primary text-on-primary; }
+    .ui-alert { @apply flex items-start gap-3 rounded-ui border border-border bg-surface p-3; }
+    .ui-toast { @apply flex items-start gap-2 rounded-ui border border-border bg-surface p-3 shadow-overlay; }
+    .ui-empty { @apply rounded-panel border border-dashed border-border p-5 text-center; }
+    .ui-skeleton { @apply min-h-4 rounded-ui bg-muted motion-safe:animate-pulse; }
+    .ui-avatar { @apply inline-grid size-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-muted text-sm font-medium; }
+    .ui-avatar-sm { @apply size-8 text-xs; }
+    .ui-avatar-lg { @apply size-12; }
+    .ui-tooltip { @apply relative inline-flex; }
+    .ui-tooltip-text {
+        @apply absolute bottom-full start-0 z-30 hidden w-max max-w-48 rounded-ui bg-primary px-2 py-1 text-xs text-on-primary;
+        translate: var(--overlay-shift, 0px);
+    }
+    .ui-tooltip:hover .ui-tooltip-text:not(.ui-tooltip-dismissed), .ui-tooltip:focus-within .ui-tooltip-text:not(.ui-tooltip-dismissed) { display: block; }
+    .ui-table-scroll { @apply w-full overflow-x-auto rounded-ui border border-border; }
+    .ui-table { @apply w-full border-collapse text-start text-sm; }
+    .ui-table :is(th, td) { @apply border-b border-border px-3 py-2 text-start; }
+    .ui-table thead { @apply bg-muted; }
+    .ui-table tbody tr:last-child td { @apply border-b-0; }
+    .ui-tab-list { @apply flex flex-wrap gap-1 border-b border-border; }
+    .ui-tab { @apply min-h-control border-b-2 border-transparent px-3 text-sm font-medium text-secondary-text hover:text-foreground aria-selected:border-foreground aria-selected:text-foreground; }
+    .ui-logo { @apply inline-flex items-center gap-2.5 text-base font-semibold tracking-tight; }
+    .ui-logo-mark { @apply inline-grid size-9 shrink-0 place-items-center overflow-hidden rounded-ui bg-primary text-on-primary; }
+    .ui-image-preview, .ui-image-thumbnail { @apply overflow-hidden rounded-ui border border-border bg-muted; }
+    .ui-image-preview img { @apply max-h-80 w-full object-contain; }
+    .ui-image-thumbnail img { @apply aspect-square w-full object-cover; }
 }

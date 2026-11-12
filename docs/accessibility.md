@@ -2,6 +2,8 @@
 
 [WCAG 2.2 AA](https://www.w3.org/TR/WCAG22/) is the project target. Conformance requires verification across complete flows. Apply semantic landmarks and headings, accessible names, clear form instructions, visible and unobscured focus, and descriptive inline errors associated with fields. Use native controls before assigning ARIA roles.
 
+The shared menu uses menu and menuitem semantics with arrow navigation. The theme options use menuitemradio. The modal uses native dialog semantics and cycles Tab and Shift+Tab within the open dialog. Password visibility is a named toggle button with aria-pressed. Exercise these controls locally at /_ui.
+
 ## Manual verification
 
 1. Navigate desktop and narrow layouts with Tab and Shift+Tab. Activate controls with Enter and Space as appropriate. Check focus order and visibility, including near sticky UI.

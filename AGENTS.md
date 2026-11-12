@@ -21,7 +21,7 @@ Build a maintainable temporary email SaaS as a Laravel 13 modular monolith. PHP 
 | Uploads and branding | [Media Library](agents/media-library.md) |
 | Verification and operations | [Testing](agents/testing.md), [Shared hosting](agents/shared-hosting.md) |
 
-Use the Pure Zinc visual system, a shared component catalog, and WCAG 2.2 AA as the accessibility target. Require server-side authorization for privileged and ownership-sensitive operations. Protect secrets and preserve CSRF. Keep schema changes explicit and initial boot independent of a configured database. Support Apache and cPanel with public/ as document root and Vite assets built locally or in CI. Production must run without Node.js, npm, or persistent queue workers.
+Use the Pure Zinc visual system, the shared Blade catalog documented in [Components](docs/components.md), and WCAG 2.2 AA as the accessibility target. Require server-side authorization for privileged and ownership-sensitive operations. Protect secrets and preserve CSRF. Keep schema changes explicit and initial boot independent of a configured database. Support Apache and cPanel with public/ as document root and Vite assets built locally or in CI. Production must run without Node.js, npm, or persistent queue workers.
 
 ## Git and releases
 

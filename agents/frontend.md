@@ -4,4 +4,4 @@ Render pages and forms in Blade. Use native navigation and form submission where
 
 Use the existing Laravel Vite plugin, Tailwind CSS 4 CSS-first config, and app CSS and JS entry points. Keep Tailwind class names discoverable as complete strings. Add explicit source coverage only when placing templates outside the current globs. Compile assets locally or in CI. Livewire, React, Vue, and Inertia are outside the selected stack.
 
-Follow [component reuse](blade-components.md), [visual rules](design-system.md), and [accessibility](accessibility.md).
+Use x-layouts.app for shared page structure and load its theme bootstrap before Vite styles. Follow [component reuse](blade-components.md), [visual rules](design-system.md), and [accessibility](accessibility.md).
