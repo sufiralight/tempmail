@@ -1,0 +1,58 @@
+@import '@fontsource-variable/geist';
+@import '@fontsource-variable/geist-mono';
+@import 'tailwindcss' source(none);
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../app/**/*.blade.php';
+@source '../**/*.{blade.php,js}';
+
+@custom-variant dark {
+    &:where([data-theme=dark], [data-theme=dark] *) {
+        @slot;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        &:where(:root:not([data-theme]), :root:not([data-theme]) *) {
+            @slot;
+        }
+    }
+}
+
+@theme inline {
+    --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Geist Mono Variable', ui-monospace, Consolas, monospace;
+    --color-page: var(--theme-page);
+    --color-surface: var(--theme-surface);
+    --color-foreground: var(--theme-foreground);
+    --color-border: var(--theme-border);
+    --color-primary: var(--theme-primary);
+    --color-on-primary: var(--theme-on-primary);
+}
+
+@layer base {
+    :root {
+        color-scheme: light;
+        --theme-page: var(--color-zinc-50);
+        --theme-surface: var(--color-white);
+        --theme-foreground: var(--color-zinc-900);
+        --theme-border: var(--color-zinc-200);
+        --theme-primary: var(--color-zinc-900);
+        --theme-on-primary: var(--color-zinc-50);
+    }
+
+    :root {
+        @variant dark {
+            color-scheme: dark;
+            --theme-page: var(--color-zinc-900);
+            --theme-surface: var(--color-zinc-800);
+            --theme-foreground: var(--color-zinc-50);
+            --theme-border: var(--color-zinc-700);
+            --theme-primary: var(--color-zinc-50);
+            --theme-on-primary: var(--color-zinc-900);
+        }
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
