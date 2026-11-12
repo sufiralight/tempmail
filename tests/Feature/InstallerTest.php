@@ -187,10 +187,39 @@ class InstallerTest extends TestCase
     public function test_non_loopback_and_spoofed_proxy_headers_cannot_open_local_installer(): void
     {
         $this->get('http://untrusted.example/install')->assertNotFound();
-        $this->get('http://localhost:8000/install', ['X-Forwarded-For' => '127.0.0.1'])->assertNotFound();
+        foreach (['localhost', '127.0.0.1'] as $host) {
+            foreach ([
+                'X-Forwarded-For' => '127.0.0.1',
+                'X-Forwarded-Host' => 'localhost',
+                'Forwarded' => 'for=127.0.0.1',
+            ] as $header => $value) {
+                $this->get("http://{$host}:8000/install", [$header => $value])->assertNotFound();
+            }
+        }
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.15', 'SERVER_ADDR' => '127.0.0.1']);
         $this->get('http://localhost:8000/install')->assertNotFound();
         $this->assertFileDoesNotExist($this->directory.'/key');
+    }
+
+    public function test_local_enable_file_is_required_and_never_overrides_installed_state(): void
+    {
+        config(['app.key' => 'base64:'.base64_encode(random_bytes(32))]);
+        unlink($this->directory.'/enable.json');
+
+        foreach (['localhost', '127.0.0.1'] as $host) {
+            $this->get("http://{$host}:8000/install")->assertNotFound()->assertSee('Installation is unavailable.');
+        }
+        $this->assertFileDoesNotExist($this->directory.'/key');
+
+        $this->gate(['mode' => 'local']);
+        foreach (['localhost', '127.0.0.1'] as $host) {
+            $this->get("http://{$host}:8000/install")->assertOk()->assertSee('Connect your database');
+        }
+
+        touch($this->directory.'/installed');
+        foreach (['localhost', '127.0.0.1'] as $host) {
+            $this->get("http://{$host}:8000/install")->assertNotFound();
+        }
     }
 
     public function test_production_requires_the_operator_peer_https_and_the_configured_host_and_database_target(): void
