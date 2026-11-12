@@ -23,3 +23,5 @@ Check both Vite entry points and referenced files in the production manifest. Us
 | Accessibility | Automated scan plus the [manual checks](accessibility.md) in both themes |
 
 Report each command executed, outcome, and coverage gaps. SQLite smoke tests alone do not establish MySQL or MariaDB compatibility.
+
+The installer integration test opts into a disposable MariaDB instance bound to 127.0.0.1 on a non-default port. Create a new, empty schema named tempmail_installer_test_ followed by 16 lowercase hexadecimal characters on that isolated instance. Set INSTALLER_TEST_MYSQL_PORT and INSTALLER_TEST_MYSQL_DATABASE and run the suite. The fixture uses an empty root password and writes migrations and an administrator only to that schema. Discard the instance afterward. The ordinary suite skips this test when the fixture is absent.

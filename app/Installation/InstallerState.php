@@ -7,9 +7,11 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Encryption\Encrypter;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use JsonException;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 final class InstallerState
@@ -21,6 +23,10 @@ final class InstallerState
     public function bootstrapKey(): string
     {
         return $this->locked(function (string $directory): string {
+            if ($this->access->installed()) {
+                abort(404);
+            }
+
             $path = $directory.'/key';
             if (! is_file($path)) {
                 if (file_exists($directory.'/lease') || is_link($path)) {
@@ -47,6 +53,10 @@ final class InstallerState
     {
         return $this->locked(function (string $directory) use ($request): string {
             $scope = $this->scope($request);
+            if ($this->pendingFinalization()) {
+                throw new InstallationRecoveryRequired;
+            }
+
             $owner = $request->session()->get('installer.owner');
             $lease = $this->activeLease($directory, $scope);
 
@@ -58,6 +68,7 @@ final class InstallerState
                 $owner = bin2hex(random_bytes(32));
                 $request->session()->regenerate(true);
                 $request->session()->put('installer.owner', $owner);
+                Log::notice('Installer ownership established.');
             }
 
             $attempt = bin2hex(random_bytes(16));
@@ -90,12 +101,49 @@ final class InstallerState
             $this->writeLease($directory, $lease);
             $request->session()->regenerate(true);
             $request->session()->put('installer.verified', true);
+            Log::notice('Installer database verification completed.');
         });
     }
 
     public function isVerified(Request $request): bool
     {
         return $this->verifiedPayload($request) !== null;
+    }
+
+    public function pendingFinalization(): bool
+    {
+        $path = config('installer.path').'/finalization';
+        clearstatcache(true, $path);
+
+        return file_exists($path) || is_link($path);
+    }
+
+    /**
+     * @param  Closure(string, array{host: string, port: int, database: string, username: string, password: string}): void  $finish
+     */
+    public function finalize(Request $request, Closure $finish): void
+    {
+        $cipher = $this->cipher();
+        $this->locked(function (string $directory) use ($request, $finish, $cipher): void {
+            $lease = $this->activeLease($directory, $this->scope($request));
+            if ($lease === null || $lease['database'] === null || ! $this->owns($lease, $request->session()->get('installer.owner'))) {
+                abort(404);
+            }
+
+            $database = json_decode($cipher->decryptString($lease['database']), true, flags: JSON_THROW_ON_ERROR);
+            $finish($directory, $database);
+            $this->writePrivate($directory.'/installed', now()->toIso8601String());
+
+            foreach (['lease', 'key', 'finalization', 'enable.json'] as $file) {
+                $path = $directory.'/'.$file;
+                if ((is_file($path) || is_link($path)) && ! @unlink($path)) {
+                    Log::warning('Installer temporary file cleanup requires operator attention.');
+                }
+            }
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        });
     }
 
     /** @return array{host: string, port: int, database: string, username: string, password: string}|null */
@@ -141,24 +189,7 @@ final class InstallerState
 
     private function writePrivate(string $path, string $contents): void
     {
-        $temporary = dirname($path).'/.'.bin2hex(random_bytes(16));
-        $handle = @fopen($temporary, 'xb');
-        if ($handle === false) {
-            throw new RuntimeException('Private installation file could not be created.');
-        }
-
-        try {
-            $private = DIRECTORY_SEPARATOR === '\\' || @chmod($temporary, 0600);
-            $written = $private && fwrite($handle, $contents) === strlen($contents) && fflush($handle);
-        } finally {
-            fclose($handle);
-        }
-
-        if (! $written || ! @rename($temporary, $path)) {
-            @unlink($temporary);
-
-            throw new RuntimeException('Private installation file could not be saved.');
-        }
+        PrivateInstallationFile::replace($path, $contents);
     }
 
     /** @return array{scope: string, owner: string, expires: int, attempt: string, database: ?string}|null */
@@ -225,7 +256,7 @@ final class InstallerState
 
             return $callback($directory);
         } catch (RuntimeException|FileNotFoundException|JsonException $exception) {
-            if ($exception instanceof ConflictHttpException || $exception instanceof ServiceUnavailableHttpException) {
+            if ($exception instanceof HttpExceptionInterface) {
                 throw $exception;
             }
 

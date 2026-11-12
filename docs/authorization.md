@@ -1,6 +1,6 @@
 # Authorization
 
-**Planned.** The starter application defines no Temp Mail role store, Gates, or Policies. The first Super Admin will be provisioned through the authorized installation operation.
+The installer provisions the first Super Admin through the authorized finalization operation. The users.is_super_admin flag defaults to false and is excluded from mass assignment. User::isSuperAdmin() exposes the decision to future Gates and Policies. The workspace_installation record preserves the initial account reference. The remaining permissions below are planned.
 
 | Actor | Intended access |
 | --- | --- |

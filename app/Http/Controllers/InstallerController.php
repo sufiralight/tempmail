@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\VerifyInstallerDatabase;
 use App\Installation\DatabaseVerifier;
+use App\Installation\InstallationRecoveryRequired;
 use App\Installation\InstallerState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -17,10 +18,15 @@ final class InstallerController extends Controller
     public function show(Request $request): View
     {
         $verified = $this->state->isVerified($request);
+        $pendingFinalization = $this->state->pendingFinalization();
+        if ($pendingFinalization && ! $verified) {
+            throw new InstallationRecoveryRequired;
+        }
 
         return view('installation.database', [
             'access' => $request->attributes->get('installer.access'),
             'verified' => $verified,
+            'pendingFinalization' => $pendingFinalization,
             'expired' => ! $verified && $request->session()->pull('installer.verified', false),
         ]);
     }
@@ -37,7 +43,6 @@ final class InstallerController extends Controller
 
         $this->state->completeVerification($request, $request->attributes->get('installer.attempt'), $settings);
 
-        // Prompt 05 can replace this redirect once its protected admin route exists.
-        return new RedirectResponse('/install#connection-verified');
+        return new RedirectResponse('/install/admin');
     }
 }

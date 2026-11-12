@@ -7,6 +7,7 @@ use App\Installation\InstallerState;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Session\SessionManager;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -19,6 +20,14 @@ final class PrepareInstaller
         $installer = $request->is('install', 'install/*');
         $home = $request->is('/') && $request->isMethodSafe();
 
+        if ($request->is('setup-complete')) {
+            if (! $this->access->installed() || ! config('app.key') || ! is_file(app()->environmentFilePath())) {
+                return $this->private(new Response('Workspace setup status is unavailable.', 404));
+            }
+
+            return $this->private($next($request));
+        }
+
         if (! $installer && ! $home) {
             return $next($request);
         }
@@ -30,7 +39,7 @@ final class PrepareInstaller
                 return $this->private(new RedirectResponse('/install'));
             }
 
-            if (! config('app.key')) {
+            if (! config('app.key') || ($this->access->installed() && ! is_file(app()->environmentFilePath()))) {
                 return $this->private(new Response('Configuration is unavailable. The deployment operator must restore the original environment or explicitly enable first installation.', 503));
             }
 
@@ -38,6 +47,10 @@ final class PrepareInstaller
         }
 
         if ($access === null) {
+            if ($request->getRealMethod() === 'POST') {
+                Log::notice('Installer submission denied by the operator gate.');
+            }
+
             return $this->private(new Response('Installation is unavailable.', 404));
         }
 
@@ -75,7 +88,13 @@ final class PrepareInstaller
         config($overrides);
         $this->resetSessionServices();
 
-        return $this->private($next($request));
+        $response = $next($request);
+        if ($request->routeIs('install.finish') && $response->getStatusCode() === 303 && $this->access->installed()) {
+            $response->headers->clearCookie('tempmail_installer', '/install', secure: $overrides['session.secure'], sameSite: 'strict');
+            $response->headers->clearCookie('XSRF-TOKEN', '/install', secure: $overrides['session.secure'], httpOnly: false, sameSite: 'strict');
+        }
+
+        return $this->private($response);
     }
 
     public function terminate(Request $request, Response $response): void

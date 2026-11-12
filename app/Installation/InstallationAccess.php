@@ -9,6 +9,7 @@ final class InstallationAccess
     public function installed(): bool
     {
         $path = config('installer.path').'/installed';
+        clearstatcache(true, $path);
 
         return file_exists($path) || is_link($path);
     }
@@ -19,6 +20,7 @@ final class InstallationAccess
     public function forRequest(Request $request): ?array
     {
         $path = config('installer.path').'/enable.json';
+        clearstatcache(true, $path);
 
         if ($this->installed() || is_link($path) || ! is_file($path)) {
             return null;

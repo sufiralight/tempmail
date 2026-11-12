@@ -42,13 +42,13 @@ Use a new identifier when replacing a decision and link both records. Dates belo
 
 **Date** 2026-11-12
 
-**Status** Accepted, database verification implemented and finalization planned
+**Status** Accepted
 
 **Context** Shared-hosting operators need browser installation and must retain control after configuration loss.
 
 **Decision** Verify the database first within an operator-authorized flow and provision the first Super Admin once. Treat uncertain state as recovery requiring trusted access.
 
-**Consequences** The installer must reconcile progress after interruption and preserve existing keys and accounts. See [Installation](installation.md).
+**Consequences** The installer pairs a durable database operation with a private filesystem checkpoint. It resumes proven database commits and routes uncertain DDL to operator recovery. See [Installation](installation.md).
 
 ## ADR-005 Shared UI and accessibility
 

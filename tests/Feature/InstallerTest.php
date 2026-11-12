@@ -3,10 +3,17 @@
 namespace Tests\Feature;
 
 use App\Installation\DatabaseVerifier;
+use App\Installation\InstallerEnvironment;
 use App\Installation\InstallerState;
+use App\Models\User;
+use Dotenv\Dotenv;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use Mockery\MockInterface;
+use PDO;
+use RuntimeException;
 use Tests\TestCase;
 
 class InstallerTest extends TestCase
@@ -66,7 +73,7 @@ class InstallerTest extends TestCase
         $page = $this->open();
         $firstSession = $page->baseRequest->session()->getId();
         $verified = $this->submit($page, ['host' => 'localhost', 'database_password' => ''])
-            ->assertHeader('Location', '/install#connection-verified');
+            ->assertHeader('Location', '/install/admin');
         $this->assertNotSame($firstSession, $verified->baseRequest->session()->getId());
         $this->assertSame([
             'host' => '127.0.0.1', 'port' => 3306, 'database' => 'tempmail_fixture', 'username' => 'fixture', 'password' => '',
@@ -79,7 +86,7 @@ class InstallerTest extends TestCase
         $this->open()->assertDontSee('Database connection verified');
         $this->continueWith($verified);
         $this->get('http://localhost:8000/install')->assertOk()->assertSee('Database connection verified');
-        $this->get('http://localhost:8000/install/admin')->assertNotFound();
+        $this->get('http://localhost:8000/install/admin')->assertOk()->assertSee('Create your administrator account');
     }
 
     public function test_invalid_inputs_never_reach_the_database_and_are_not_flashed(): void
@@ -150,12 +157,145 @@ class InstallerTest extends TestCase
         $this->submit($second)->assertStatus(409);
         $this->continueWith($second);
         $this->open()->assertDontSee('Database connection verified');
+        $this->get('http://localhost:8000/install/admin')->assertNotFound();
 
         $this->continueWith($verified);
         $this->open()->assertSee('Database connection verified');
         $this->travel(InstallerState::LIFETIME_MINUTES + 1)->minutes();
         $this->open()->assertDontSee('Database connection verified');
+        $this->get('http://localhost:8000/install/admin')->assertNotFound();
         $this->assertFileDoesNotExist($this->directory.'/lease');
+    }
+
+    public function test_admin_form_requires_csrf_and_rejects_invalid_account_details_and_role_fields(): void
+    {
+        $this->mock(DatabaseVerifier::class, fn (MockInterface $mock) => $mock->shouldReceive('verify')->once()->andReturnTrue());
+        $this->continueWith($this->submit($this->open()));
+        $url = 'http://localhost:8000/install/admin';
+        $page = $this->get($url)->assertOk()->assertSee('Confirm password');
+        $this->submit($page, ['_token' => 'invalid'], $url)->assertStatus(419);
+
+        $response = $this->submit($page, [
+            'name' => '',
+            'email' => 'invalid',
+            'password' => 'short-pass',
+            'password_confirmation' => 'different',
+            'role' => 'super_admin',
+            'is_super_admin' => true,
+        ], $url)->assertHeader('Location', '/install/admin');
+        $this->continueWith($response);
+        $this->get($url)->assertOk()->assertSee('name field is required')
+            ->assertSee('valid email address')->assertSee('at least 12 characters')
+            ->assertSee('role field must be missing')->assertSee('is super admin field must be missing')
+            ->assertDontSee('short-pass')->assertDontSee('different');
+
+        $page = $this->get($url)->assertOk();
+        $response = $this->submit($page, [
+            'name' => 'Admin Fixture', 'email' => 'owner@example.test',
+            'password' => 'fixture-long-secret', 'password_confirmation' => 'fixture-other-secret',
+        ], $url)->assertHeader('Location', '/install/admin');
+        $this->continueWith($response);
+        $this->get($url)->assertOk()->assertSee('confirmation does not match')->assertDontSee('fixture-long-secret');
+        $this->assertFileDoesNotExist($this->directory.'/finalization');
+        $this->assertFalse((new User(['name' => 'Regular', 'is_super_admin' => true]))->isSuperAdmin());
+    }
+
+    public function test_environment_writer_preserves_the_application_key_and_round_trips_special_values(): void
+    {
+        $this->app->useEnvironmentPath($this->directory);
+        $this->app->instance('installer.external_environment', []);
+        $key = 'base64:'.base64_encode(random_bytes(32));
+        $path = $this->app->environmentFilePath();
+        file_put_contents($path, "# custom\r\nAPP_KEY={$key}\r\nAPP_NAME=\"Custom Workspace\"\r\nDB_PASSWORD=old\r\n");
+
+        $request = Request::create('http://localhost:8000/install/admin');
+        $request->attributes->set('installer.original_config', ['app.key' => $key, 'app.cipher' => 'AES-256-CBC']);
+        $request->attributes->set('installer.access', ['local' => true]);
+        $writer = app(InstallerEnvironment::class);
+        $password = '  special "'.chr(39).chr(92).' ${APP_KEY} # trailing  ';
+        $settings = ['host' => '127.0.0.1', 'port' => 3306, 'database' => 'fixture', 'username' => 'owner', 'password' => $password];
+        $plan = $writer->prepare($request, $settings);
+        $this->assertStringContainsString('DB_PASSWORD=old', file_get_contents($path));
+        $writer->persist($plan);
+        $contents = file_get_contents($path);
+        $parsed = Dotenv::parse($contents);
+        $this->assertSame($password, $parsed['DB_PASSWORD']);
+        $this->assertSame($key, $parsed['APP_KEY']);
+        $this->assertSame('Custom Workspace', $parsed['APP_NAME']);
+        $this->assertStringContainsString("# custom\r\n", $contents);
+        $this->assertStringNotContainsString('DB_PASSWORD=old', $contents);
+
+        $settings['password'] = '';
+        $writer->persist($writer->prepare($request, $settings));
+        $this->assertSame('', Dotenv::parse(file_get_contents($path))['DB_PASSWORD']);
+    }
+
+    public function test_real_mariadb_finalization_resumes_an_environment_write_failure_without_creating_a_second_admin(): void
+    {
+        $port = filter_var(getenv('INSTALLER_TEST_MYSQL_PORT'), FILTER_VALIDATE_INT);
+        $database = getenv('INSTALLER_TEST_MYSQL_DATABASE');
+        if ($port === false || $database === false) {
+            $this->markTestSkipped('Requires an isolated loopback MariaDB fixture.');
+        }
+
+        $this->assertGreaterThanOrEqual(1024, $port);
+        $this->assertLessThanOrEqual(65535, $port);
+        $this->assertNotSame(3306, $port);
+        $this->assertMatchesRegularExpression('/\Atempmail_installer_test_[a-f0-9]{16}\z/', $database);
+        $pdo = new PDO("mysql:host=127.0.0.1;port={$port};dbname={$database}", 'root', '', [
+            PDO::ATTR_TIMEOUT => 3, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+        $this->assertFalse($pdo->query('SHOW FULL TABLES')->fetchColumn());
+
+        $this->app->useEnvironmentPath($this->directory);
+        $this->app->instance('installer.external_environment', []);
+        $this->partialMock(InstallerEnvironment::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('persist')->once()->andThrow(new RuntimeException('Fixture write interruption.'));
+        });
+        $this->continueWith($this->submit($this->open(), [
+            'port' => $port, 'database' => $database, 'username' => 'root',
+        ])->assertHeader('Location', '/install/admin'));
+        $url = 'http://localhost:8000/install/admin';
+        $account = [
+            'name' => 'Fixture Owner', 'email' => 'OWNER@EXAMPLE.TEST',
+            'password' => 'Fixture-secret-123!', 'password_confirmation' => 'Fixture-secret-123!',
+        ];
+        $lock = 'tempmail:'.substr(hash('sha256', $database), 0, 48);
+        $this->assertSame(1, (int) $pdo->query("SELECT GET_LOCK('{$lock}', 0)")->fetchColumn());
+        try {
+            $this->submit($this->get($url)->assertOk(), $account, $url)->assertStatus(409);
+            $this->assertFileDoesNotExist($this->directory.'/finalization');
+            $this->assertFalse($pdo->query('SHOW FULL TABLES')->fetchColumn());
+        } finally {
+            $pdo->query("SELECT RELEASE_LOCK('{$lock}')");
+        }
+
+        $this->submit($this->get($url)->assertOk(), $account, $url)->assertStatus(503)
+            ->assertDontSee($account['password']);
+        $this->assertFileDoesNotExist($this->directory.'/installed');
+        $this->assertFileDoesNotExist($this->app->environmentFilePath());
+        $this->assertSame(1, (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn());
+
+        $this->app->forgetInstance(InstallerEnvironment::class);
+        $this->submit($this->get($url)->assertOk(), $account, $url)->assertStatus(303)
+            ->assertHeader('Location', '/setup-complete');
+        $user = $pdo->query('SELECT email, password, is_super_admin FROM users')->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame('owner@example.test', $user['email']);
+        $this->assertTrue(Hash::check($account['password'], $user['password']));
+        $this->assertSame(1, (int) $user['is_super_admin']);
+        $this->assertSame(1, (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn());
+        $this->assertSame(1, (int) $pdo->query('SELECT COUNT(*) FROM workspace_installation')->fetchColumn());
+        $this->assertFileExists($this->directory.'/installed');
+        foreach (['key', 'lease', 'enable.json', 'finalization'] as $name) {
+            $this->assertFileDoesNotExist($this->directory.'/'.$name);
+        }
+
+        $environment = Dotenv::parse(file_get_contents($this->app->environmentFilePath()));
+        $this->assertSame('', $environment['DB_PASSWORD']);
+        config(['app.key' => $environment['APP_KEY']]);
+        $this->get('http://localhost:8000/setup-complete')->assertOk()->assertSee('Workspace setup complete');
+        $this->get($url)->assertNotFound();
+        $this->post($url, $account)->assertNotFound();
     }
 
     public function test_new_submission_invalidates_previous_verification_before_field_validation(): void

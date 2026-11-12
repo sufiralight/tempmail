@@ -8,7 +8,8 @@
     @if ($verified)
         <x-ui.alert id="connection-verified" tabindex="-1" x-data x-init="$el.focus()" class="mb-4"
             variant="success" title="Database connection verified" announce>
-            This session can continue to Super Admin setup when that step is available. Verification expires after 15 minutes.
+            <p>Continue to administrator setup before this verification expires.</p>
+            <x-ui.button href="/install/admin" variant="outline" class="mt-2">Continue to administrator setup</x-ui.button>
         </x-ui.alert>
     @endif
 
@@ -25,6 +26,7 @@
         </x-ui.alert>
     @endif
 
+    @unless ($pendingFinalization)
     <x-ui.card>
         <form method="post" action="/install" class="grid gap-4">
             @csrf
@@ -46,6 +48,7 @@
             </x-ui.button>
         </form>
     </x-ui.card>
+    @endunless
 
     <x-slot:footer><p class="ui-help">Step 1 of 2 · Database connection</p></x-slot:footer>
 </x-layouts.app>

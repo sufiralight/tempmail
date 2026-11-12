@@ -1,6 +1,6 @@
 # Installation
 
-Prompt 04 implements database verification at GET and POST /install. The first Super Admin screen and finalization belong to Prompt 05. The current success state is /install#connection-verified. /install/admin has no handler yet.
+The installer verifies the database at GET and POST /install, then creates the first Super Admin at GET and POST /install/admin. Both steps require the same private operator gate. The verified database belongs to one encrypted installer session. Successful finalization redirects through /setup-complete and then to the named login route when that route is available.
 
 ## Open a new installation
 
@@ -34,23 +34,35 @@ The authorized operator is redirected from / to /install. Requests outside the g
 
 Create an empty MySQL or MariaDB database and a dedicated account for it using the provider panel. Enter the TCP host, port, database name, username, and password. Local localhost maps to 127.0.0.1 for TCP and accepts an empty password. Production requires a password and the endpoint from enable.json. See [Database](database.md).
 
-POST requires the session CSRF token, accepts an 8 KiB URL-encoded form, and permits five attempts per network peer per minute. The verifier creates a short-timeout PDO connection, selects the supplied database, runs SELECT 1, and rejects databases where SHOW FULL TABLES returns a table or view. Use a dedicated new database whose contents are visible to the account. Only read queries run. Verification never writes to .env, changes the default connection, runs migrations, or creates an administrator.
+POST requires the session CSRF token, accepts an 8 KiB URL-encoded form, and permits five attempts per network peer per minute. The verifier creates a short-timeout PDO connection, selects the supplied database, runs SELECT 1, and rejects databases where SHOW FULL TABLES returns a table or view. Use a dedicated new database whose contents are visible to the account. Only read queries run. This verification step is read-only. Finalization starts only after the administrator form is submitted.
 
-## State and Prompt 05 contract
+## Finalize workspace setup
+
+After verification, enter the administrator's full name, email address, and a confirmed password of at least 12 characters. The application normalizes the email, rejects supplied role fields, hashes the password through Laravel, and assigns the initial privilege server-side. The users table has a unique email constraint. A singleton workspace_installation record binds the initial account to the operation and records the database commit.
+
+The installer holds an exclusive private filesystem lock and a MySQL advisory lock for the verified schema. Under the locks it rechecks authorization and requires an empty target for a new operation. It runs Laravel migrations through an isolated named connection. The initial account and the database installation record commit in a single transaction. A database account must be able to inspect and migrate its dedicated schema.
+
+Finalization prepares .env before DDL and replaces it only after the database transaction commits. Existing valid application keys are preserved. A fresh installation generates a key automatically. Installer sessions use a separate temporary key. The writer checks that unrelated settings survive a Dotenv round trip, escapes credentials, and atomically replaces .env with a private sibling file. On Unix the new file uses mode 0600. Windows requires a restricted inherited ACL on the application directory. Dotenv metavalues such as a literal password of null remain literal for installer-managed MySQL credentials.
+
+Use an uncached configuration for installation. The writer refuses conflicting process-level environment overrides and a selected environment file other than .env. Where applicable, have the hosting operator align overrides, use the standard .env, and deploy without bootstrap/cache/config.php. The PHP account needs write access to the private installer directory and the application directory above public/ during finalization. After completion, restore the application's normal filesystem permissions.
+
+## State and recovery
 
 | State | Condition and transition |
 | --- | --- |
-| Closed | No valid enable.json, request outside the gate, or the installed marker exists |
-| Ready | Authorized request with no active lease for its session |
-| Verifying | POST claims the 15-minute lease and regenerates the session ID on first claim. A new POST clears prior verification before validation. |
-| Verified | The matching attempt succeeds and saves encrypted connection settings. The session ID rotates again and the page announces success. |
-| Expired | The server rejects access to expired state. A fresh attempt can acquire the lease. |
-| Installed | Reserved for Prompt 05. The durable private installed marker takes priority over enable.json. |
+| Closed | No valid enable.json, request outside the gate, or durable installed marker exists |
+| Ready | Authorized operator can verify a dedicated empty database |
+| Verified | The active 15-minute lease holds encrypted settings. Only the owning session can enter the administrator step. |
+| Migrating | A private checkpoint exists before DDL. Further database verification is blocked so it cannot replace the target. |
+| Account created | The initial administrator and matching operation ID committed in the database. The installer writes .env and then the durable installed marker. |
+| Installed | Both installer routes are closed. The lease, bootstrap key, gate and checkpoint are removed, and the installer session is invalidated. |
 
-The lease is scoped to the exact enable.json contents and to an owner identifier in the encrypted server-side session. Only the matching session can obtain verified settings. InstallerState::verifiedDatabase($request) returns a verified host, port, database, username, and password for the current owner or null. Call it only behind the installer gate with an initialized installer session. Keep the returned settings server-side.
+A browser retry is safe while the verified lease is active if the database contains the exact operation ID and the administrator supplies the same email and password. This completes a failed environment write or marker write without creating a second account. Keep the deployment gate in place until finalization succeeds.
 
-Prompt 05 must protect GET and POST /install/admin with the same gate and require current verification. Before a privileged write, extend the state service to recheck the lease and hold the same exclusive filesystem lock across the controlled finalization sequence. Recheck the target schema, persist configuration safely without replacing unrelated settings or an existing APP_KEY, run required migrations with recoverable checkpoints, provision the first Super Admin once, and record durable completion. Clear the lease and temporary installer key only after finalization and retire enable.json. Redirect to /login and then /dashboard when those routes exist.
+If DDL was interrupted before the database transaction committed, or if the lease expired, browser finalization stops. Keep the private files and affected database as evidence. Through the authenticated hosting panel, close the gate and have the operator inspect the migration ledger, application schema, and private checkpoint. Restore from an operator-controlled backup or reconcile the original installation in a protected maintenance window. Treat any orphaned .env.install-* sibling as a secret and remove it after reconciliation. A genuinely new attempt requires a separate empty database and a clean deployment state after the operator has resolved and archived the failed operation. The installer never runs destructive migrations or resets a partial database automatically.
 
-## Recovery
+If .env is missing on a completed deployment, keep the installed marker and restore the original APP_KEY, private settings and database access from backups. Preserve the marker across releases. Restoring the original key matters for previously encrypted data. Do not recreate the first administrator to recover configuration. See [Security](security.md) and [Database](database.md).
 
-Remove enable.json to close the installer. Preserve the installed marker across updates and backups. If .env is lost on an existing deployment, keep the installer closed and restore the original APP_KEY, environment settings, and matching database access from operator-controlled backups. Treat missing or uncertain installation evidence as a recovery operation. Enable a first installation only after independently confirming that the deployment and target database are new. Never recreate the first Super Admin to recover configuration. See [Security](security.md).
+## Prompt 06 integration
+
+Provide the normal named login route. /setup-complete forwards to it with a success message, using the normal application session. Require a completed installation before enabling account authentication. The installer never signs the administrator in. Use User::isSuperAdmin() for authorization decisions and keep is_super_admin outside normal registration and profile assignment. The login flow owns redirection to /dashboard.

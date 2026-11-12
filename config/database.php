@@ -1,7 +1,12 @@
 <?php
 
+use Illuminate\Support\Env;
 use Illuminate\Support\Str;
 use Pdo\Mysql;
+
+$mysqlValue = static fn (string $key) => env('DB_INSTALLER_LITERAL', false)
+    ? (Env::getRepository()->get($key) ?? '')
+    : env($key, '');
 
 return [
 
@@ -49,9 +54,9 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', ''),
-            'username' => env('DB_USERNAME', ''),
-            'password' => env('DB_PASSWORD', ''),
+            'database' => $mysqlValue('DB_DATABASE'),
+            'username' => $mysqlValue('DB_USERNAME'),
+            'password' => $mysqlValue('DB_PASSWORD'),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
