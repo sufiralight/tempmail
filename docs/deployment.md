@@ -2,7 +2,7 @@
 
 ## Local development
 
-Use PHP 8.5, Composer, PDO MySQL for local MySQL or MariaDB, and PDO SQLite for the default test configuration. Use a Node version supported by the locked Vite package. The current [CI workflow](../.github/workflows/checks.yml) selects Node 24. Run composer setup. When the local APP_KEY is empty, run php artisan key:generate. Keep existing keys. Start the development servers with composer dev or run php artisan serve and npm run dev separately. On Windows use npm.cmd if PowerShell restricts script execution.
+Use PHP 8.5, Composer, the PDO driver for the [selected database](database.md), and PDO SQLite for the default test configuration. Use a Node version supported by the locked Vite package. The current [CI workflow](../.github/workflows/checks.yml) selects Node 24. Run composer setup. When the local APP_KEY is empty, run php artisan key:generate. Keep existing keys. Start the development servers with composer dev or run php artisan serve and npm run dev separately. On Windows use npm.cmd if PowerShell restricts script execution.
 
 Follow [Database](database.md) when configuring local database access. The initial welcome and health routes can start before a schema exists. See [Testing](testing.md) before publishing changes.
 

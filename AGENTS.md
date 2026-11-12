@@ -1,6 +1,6 @@
 # Temp Mail SaaS
 
-Build a maintainable temporary email SaaS as a Laravel 13 modular monolith. PHP 8.5 is the development and CI target. Use MySQL or MariaDB, Blade, reusable Blade components, Alpine, Tailwind CSS 4, and Vite. Check the manifests, lockfiles, and installed versions before changing dependencies. Preserve working behavior and Laravel conventions.
+Build a maintainable temporary email SaaS as a Laravel 13 modular monolith. PHP 8.5 is the development and CI target. Use the configured MySQL, MariaDB, PostgreSQL, SQLite or SQL Server connection, Blade, reusable Blade components, Alpine, Tailwind CSS 4, and Vite. Check the manifests, lockfiles, and installed versions before changing dependencies. Preserve working behavior and Laravel conventions.
 
 ## Workflow
 

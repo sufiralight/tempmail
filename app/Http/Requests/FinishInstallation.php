@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use Closure;
+use App\Rules\AccountPassword;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -25,13 +25,7 @@ final class FinishInstallation extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email:rfc', 'max:255'],
-            'password' => ['bail', 'required', 'string', 'min:12', 'max:1024', 'confirmed',
-                function (string $attribute, mixed $value, Closure $fail): void {
-                    if (str_contains($value, "\0") || (config('hashing.driver', 'bcrypt') === 'bcrypt' && strlen($value) > 72)) {
-                        $fail('Use a password that fits the supported length and character limits.');
-                    }
-                },
-            ],
+            'password' => AccountPassword::rules(),
             'password_confirmation' => ['required', 'string'],
             'role' => ['missing'],
             'is_super_admin' => ['missing'],

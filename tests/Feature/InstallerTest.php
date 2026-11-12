@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Installation\DatabaseEngine;
 use App\Installation\DatabaseVerifier;
 use App\Installation\InstallerEnvironment;
 use App\Installation\InstallerState;
@@ -252,7 +253,10 @@ class InstallerTest extends TestCase
         $this->partialMock(InstallerEnvironment::class, function (MockInterface $mock): void {
             $mock->shouldReceive('persist')->once()->andThrow(new RuntimeException('Fixture write interruption.'));
         });
+        $engine = getenv('INSTALLER_TEST_MYSQL_ENGINE') ?: 'mysql';
+        $this->assertContains($engine, ['mysql', 'mariadb']);
         $this->continueWith($this->submit($this->open(), [
+            'engine' => $engine,
             'port' => $port, 'database' => $database, 'username' => 'root',
         ])->assertHeader('Location', '/install/admin'));
         $url = 'http://localhost:8000/install/admin';
@@ -291,11 +295,98 @@ class InstallerTest extends TestCase
         }
 
         $environment = Dotenv::parse(file_get_contents($this->app->environmentFilePath()));
+        $this->assertSame($engine, $environment['DB_CONNECTION']);
         $this->assertSame('', $environment['DB_PASSWORD']);
         config(['app.key' => $environment['APP_KEY']]);
-        $this->get('http://localhost:8000/setup-complete')->assertOk()->assertSee('Workspace setup complete');
+        $this->get('http://localhost:8000/setup-complete')->assertRedirect('/login')->assertSessionHas('status');
         $this->get($url)->assertNotFound();
         $this->post($url, $account)->assertNotFound();
+    }
+
+    public function test_all_engine_options_are_visible_and_unavailable_drivers_cannot_be_submitted(): void
+    {
+        $page = $this->open()->assertSee('Database engine');
+        foreach (DatabaseEngine::cases() as $engine) {
+            $page->assertSee($engine->label());
+            if (! $engine->available()) {
+                $page->assertSee('requires '.$engine->extension());
+            }
+        }
+
+        $unavailable = array_find(DatabaseEngine::cases(), static fn (DatabaseEngine $engine): bool => ! $engine->available());
+        if ($unavailable !== null) {
+            $this->mock(DatabaseVerifier::class, fn (MockInterface $mock) => $mock->shouldNotReceive('verify'));
+            $response = $this->submit($page, ['engine' => $unavailable->value])->assertHeader('Location', '/install');
+            $this->continueWith($response);
+            $this->open()->assertSee('needs the '.$unavailable->extension());
+        }
+    }
+
+    public function test_sqlite_rejects_supplied_paths_and_existing_files_then_finalizes_a_new_private_file(): void
+    {
+        $this->app->useEnvironmentPath($this->directory);
+        $this->app->instance('installer.external_environment', []);
+        $submitSqlite = function (TestResponse $page, array $extra = []): TestResponse {
+            $this->continueWith($page);
+            preg_match('/name="_token" value="([^"]+)"/', $page->getContent(), $token);
+
+            return $this->post('http://localhost:8000/install', [
+                '_token' => $token[1], 'engine' => 'sqlite',
+            ] + $extra, ['Content-Type' => 'application/x-www-form-urlencoded']);
+        };
+        $path = $this->directory.'/workspace.sqlite';
+        $bad = $submitSqlite($this->open(), ['path' => '../other.sqlite'])->assertHeader('Location', '/install');
+        $this->continueWith($bad);
+        $this->assertFileDoesNotExist($path);
+        file_put_contents($path, 'Unrelated fixture content');
+        $bad = $submitSqlite($this->open())->assertHeader('Location', '/install');
+        $this->continueWith($bad);
+        $this->open()->assertSee('Could not verify an empty database');
+        $this->assertSame('Unrelated fixture content', file_get_contents($path));
+        unlink($path);
+
+        $unrelated = $this->directory.'/unrelated-file';
+        file_put_contents($unrelated, 'Keep this file');
+        if (@symlink($unrelated, $path)) {
+            $bad = $submitSqlite($this->open())->assertHeader('Location', '/install');
+            $this->continueWith($bad);
+            $this->open()->assertSee('Could not verify an empty database');
+            $this->assertSame('Keep this file', file_get_contents($unrelated));
+            unlink($path);
+        }
+
+        $verified = $submitSqlite($this->open())->assertHeader('Location', '/install/admin');
+        $this->assertFileDoesNotExist($path);
+        $this->continueWith($verified);
+        $url = 'http://localhost:8000/install/admin';
+        $response = $this->submit($this->get($url)->assertOk(), [
+            'name' => 'SQLite Owner', 'email' => 'owner@example.test',
+            'password' => 'sqlite-fixture-secret', 'password_confirmation' => 'sqlite-fixture-secret',
+        ], $url);
+        $response->assertStatus(303);
+        $environment = Dotenv::parse(file_get_contents($this->app->environmentFilePath()));
+        $this->assertSame('sqlite', $environment['DB_CONNECTION']);
+        $this->assertSame(realpath($path), $environment['DB_DATABASE']);
+        $pdo = new PDO('sqlite:'.$path);
+        $admin = $pdo->query('SELECT email, is_super_admin FROM users')->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame(['email' => 'owner@example.test', 'is_super_admin' => 1], $admin);
+        $this->get($url)->assertNotFound();
+    }
+
+    public function test_production_gate_pins_sqlite_without_accepting_a_network_engine(): void
+    {
+        $this->app->detectEnvironment(fn (): string => 'production');
+        $this->gate([
+            'mode' => 'production', 'host' => 'mail.example.test', 'operator_ip' => '203.0.113.17',
+            'database_engine' => 'sqlite',
+        ]);
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.17']);
+        $url = 'https://mail.example.test/install';
+        $page = $this->get($url)->assertOk()->assertSee('outside deployment configuration');
+        $this->mock(DatabaseVerifier::class, fn (MockInterface $mock) => $mock->shouldNotReceive('verify'));
+        $response = $this->submit($page, ['engine' => 'mysql'], $url)->assertHeader('Location', '/install');
+        $this->continueWith($response);
+        $this->get($url)->assertSee('Choose a database engine authorized for this installation.');
     }
 
     public function test_new_submission_invalidates_previous_verification_before_field_validation(): void

@@ -1,16 +1,18 @@
 # Authentication
 
-**Implemented foundation.** The starter User model and account-related migrations exist. The repository has no project login, registration, recovery, verification, or dashboard routes.
+Accounts are available after successful installation. The durable installer marker, active private environment file and application key are checked before the web session starts. The installer redirects through /setup-complete to the named login route with a success message. The administrator signs in using the same form as other members.
 
-**Planned routes.** Finalize named routes and middleware when implementing the module.
-
-| Flow | Proposed endpoints | Access and behavior |
+| Flow | Routes | Behavior |
 | --- | --- | --- |
-| Registration | GET and POST /register | Guest and throttled. Assign ordinary privileges and initiate verification. |
-| Login | GET and POST /login | Guest and throttled. Validate with Laravel, regenerate the session ID, and redirect to an authorized intended page or /dashboard. |
-| Logout | POST /logout | Authenticated with CSRF. Invalidate the session and regenerate the CSRF token. |
-| Reset password | GET and POST /forgot-password, GET /reset-password/{token}, POST /reset-password | Guest. Use the password broker, expiring tokens, and neutral recovery responses. |
-| Email verification | GET /email/verify, GET /email/verify/{id}/{hash}, POST /email/verification-notification | Authenticated. Require a valid signed link for verification and throttle resends. |
-| Password confirmation | GET and POST /confirm-password | Authenticated. Require recent confirmation for sensitive actions. |
+| Login | GET and POST /login | Guest only. Laravel verifies credentials and rotates the session. Invalid accounts and wrong passwords get the same message. |
+| Registration | GET and POST /register | Guest only. Normalize email, enforce its database uniqueness and a confirmed password of at least 12 characters, then sign in the new ordinary member. |
+| Logout | POST /logout | Authenticated with session CSRF token. Clear the guard, invalidate the session, and rotate the CSRF token. |
+| Recovery | GET and POST /forgot-password, GET /reset-password/{token}, POST /reset-password | Guest only. Use Laravel's password broker, a neutral request response, an expiring single-use token, and a delivery URL built from APP_URL. |
+| Workspace | GET /dashboard | Minimal authenticated landing page. |
+| Administration | GET /admin | Minimal protected landing page requiring the access-admin Gate. |
 
-Use Laravel hashing, retain secure cookies, and rate-limit attempts by suitable account and client identifiers. Allow password managers and paste. Create the first Super Admin through the [installer](installation.md). Use the normal authentication mechanism for that account and enforce separate [authorization](authorization.md) on privileged requests.
+The login limiter permits five attempts per normalized email and network peer per minute and twenty attempts per peer per minute. Registration and password recovery have their own per-peer limits. Authentication writes require the session CSRF token. The redirect after sign-in uses a fixed internal destination. Only a permitted Super Admin can continue to an intended /admin route.
+
+Laravel encrypts the session cookie and uses file-backed sessions by default. Preserve HttpOnly, SameSite and Secure on production HTTPS. No remember-me UI is provided. Authentication session middleware checks password hash changes on protected routes. Password fields use the shared accessible toggle and password manager autocomplete attributes.
+
+Configure a direct delivery mailer such as SMTP and a canonical HTTPS APP_URL for real reset email. The log, array and composite mailers are excluded from reset delivery. Email verification, password confirmation for sensitive operations and feature-specific account pages can build on these routes and guards. See [Authorization](authorization.md) and [Installation](installation.md).

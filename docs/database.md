@@ -1,9 +1,21 @@
 # Database
 
-MySQL and MariaDB are the deployment targets. [Database configuration](../config/database.php) reads DB_CONNECTION, DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME and DB_PASSWORD. Use mysql for a compatible server or the configured mariadb driver as appropriate. Local TCP commonly uses 127.0.0.1 and port 3306. Use localhost when appropriate for the platform or server configuration and set DB_SOCKET explicitly when needed. DB_PASSWORD= is valid for a local account configured without a password. Production uses a dedicated password-protected account.
+The installer and the application use the native Laravel connection for each selected engine.
 
-The [starter migrations](../database/migrations) define users, password reset tokens, sessions, cache and locks, jobs, batches, and failed jobs. These files describe available schema changes. An environment's applied schema is determined by its migration ledger. File sessions, file cache, and synchronous queues are current defaults. Switch to database-backed storage after applying its required migrations.
+| Engine | DB_CONNECTION | PHP capability | Default TCP port |
+| --- | --- | --- | --- |
+| MySQL | mysql | pdo_mysql | 3306 |
+| MariaDB | mariadb | pdo_mysql | 3306 |
+| PostgreSQL | pgsql | pdo_pgsql | 5432 |
+| SQLite | sqlite | pdo_sqlite | Private fixed file |
+| Microsoft SQL Server | sqlsrv | pdo_sqlsrv and a compatible Microsoft ODBC driver | 1433 |
 
-Keep each feature's schema under its ownership in Laravel's migration path. Add indexes for access patterns and unique constraints for invariants. Specify foreign key delete behavior deliberately. Use transactions for related data writes, coordinate concurrent updates, and plan retention and backfills before deploying destructive changes.
+PDO registration determines which options can be submitted. Actual verification exercises the configured driver and server. SQL Server uses encrypted connections with certificate validation by default. PostgreSQL expects the public schema and SQL Server expects dbo. Configure provider-approved TLS for remote endpoints. Both loopback hostnames normalize to TCP 127.0.0.1 for network verification. An empty database password is accepted for local connections.
 
-The first installer step verifies an empty database through a temporary read-only PDO connection. The authorized [finalization step](installation.md) uses a dedicated Laravel connection and an advisory lock to run migrations. The account and workspace_installation record share a transaction. Use a controlled release for later migrations with backup, reviewed migration order, and rollback or restore plan. Where shell is available, use php artisan migrate:status and php artisan migrate --force for a reviewed production release. Where shell is unavailable, use an approved provider or application update mechanism once available. Keep HTTP startup independent of migrations. Inspect the ledger and actual schema after interruption and surface a redacted diagnostic with the failed migration and recovery action. Test fresh installation and upgrade paths on isolated MySQL and MariaDB databases.
+The first step uses an isolated Laravel connection, runs SELECT 1, and checks that the selected database is empty and matches the requested target. It uses an in-memory connection for SQLite and checks availability of a fixed private filename. No tables or database file are created during verification. See [Installation](installation.md).
+
+Finalization rechecks the target and takes a database-scoped advisory lock for network engines. For SQLite, the private filesystem lock and exclusive file creation protect the fixed database. The installer runs the existing Laravel Schema Builder migrations for users, reset tokens, sessions, cache, jobs and workspace installation. The first account and its operation record share a transaction. MySQL and MariaDB installation use InnoDB.
+
+Later modules must supply their own portable migrations. Use a controlled release with backups and a recovery plan. The migration ledger records applied changes. Test fresh installation and upgrades against isolated instances of each affected engine. SQLite results alone cannot establish network-engine compatibility.
+
+On Windows, local validation exercised the sqlite, mysql and mariadb Laravel paths, with both network paths using an isolated MariaDB server. PostgreSQL PDO was present without a test server. PDO SQLSRV and a SQL Server fixture were unavailable. No separate native MySQL server or live cPanel host was tested.

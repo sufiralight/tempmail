@@ -1,6 +1,6 @@
 # Installation
 
-The installer verifies the database at GET and POST /install, then creates the first Super Admin at GET and POST /install/admin. Both steps require the same private operator gate. The verified database belongs to one encrypted installer session. Successful finalization redirects through /setup-complete and then to the named login route when that route is available.
+The installer verifies the database at GET and POST /install, then creates the first Super Admin at GET and POST /install/admin. Both steps require the same private operator gate. The verified database belongs to one encrypted installer session. Successful finalization redirects through /setup-complete to the named /login route.
 
 ## Open a new installation
 
@@ -21,6 +21,7 @@ For a fresh production deployment, use cPanel File Manager or an equivalent auth
   "mode": "production",
   "host": "mail.example.com",
   "operator_ip": "203.0.113.17",
+  "database_engine": "mysql",
   "database_host": "db.example.com",
   "database_port": 3306
 }
@@ -32,17 +33,21 @@ The authorized operator is redirected from / to /install. Requests outside the g
 
 ## Verify the database
 
-Create an empty MySQL or MariaDB database and a dedicated account for it using the provider panel. Enter the TCP host, port, database name, username, and password. Local localhost maps to 127.0.0.1 for TCP and accepts an empty password. Production requires a password and the endpoint from enable.json. See [Database](database.md).
+Choose MySQL, MariaDB, PostgreSQL, SQLite or SQL Server. For a network engine, create a dedicated empty database and account, then enter its TCP settings. Local localhost maps to 127.0.0.1 and permits an empty password. Production requires a password and the engine and endpoint pinned by enable.json. Older gates without database_engine continue to pin MySQL. See [Database](database.md).
 
-POST requires the session CSRF token, accepts an 8 KiB URL-encoded form, and permits five attempts per network peer per minute. The verifier creates a short-timeout PDO connection, selects the supplied database, runs SELECT 1, and rejects databases where SHOW FULL TABLES returns a table or view. Use a dedicated new database whose contents are visible to the account. Only read queries run. This verification step is read-only. Finalization starts only after the administrator form is submitted.
+POST requires the session CSRF token, accepts an 8 KiB URL-encoded form, and permits five attempts per network peer per minute. The verifier uses an isolated Laravel PDO connection, runs SELECT 1, and checks the database identity and native schema catalog for existing objects. Use a dedicated new database whose contents are visible to the account. Finalization starts only after the administrator form is submitted.
+
+For production SQLite, set database_engine to sqlite and omit database_host and database_port. SQLite verification checks the PDO driver with an in-memory database and confirms that the private filename is unused. Setup creates storage/app/private/installer/workspace.sqlite exclusively after finalization starts. Browser paths and network settings are rejected. Preserve this file and its containing directory across deploys and backups.
+
+A 404 with “Installation is unavailable” occurs before sessions when the private gate is absent, invalid, outside the request boundary, or superseded by the installed marker. If an uninstalled loopback checkout is missing enable.json, provision the local gate above. Preserve an existing installation marker and recover its configuration through the operator.
 
 ## Finalize workspace setup
 
 After verification, enter the administrator's full name, email address, and a confirmed password of at least 12 characters. The application normalizes the email, rejects supplied role fields, hashes the password through Laravel, and assigns the initial privilege server-side. The users table has a unique email constraint. A singleton workspace_installation record binds the initial account to the operation and records the database commit.
 
-The installer holds an exclusive private filesystem lock and a MySQL advisory lock for the verified schema. Under the locks it rechecks authorization and requires an empty target for a new operation. It runs Laravel migrations through an isolated named connection. The initial account and the database installation record commit in a single transaction. A database account must be able to inspect and migrate its dedicated schema.
+The installer holds an exclusive private filesystem lock and an engine-specific advisory lock for the verified network schema. SQLite uses the private filesystem lock and exclusive file creation. Under the locks it rechecks authorization and requires an empty target for a new operation. It runs Laravel migrations through an isolated named connection. The initial account and the database installation record commit in a single transaction. A database account must be able to inspect and migrate its dedicated schema.
 
-Finalization prepares .env before DDL and replaces it only after the database transaction commits. Existing valid application keys are preserved. A fresh installation generates a key automatically. Installer sessions use a separate temporary key. The writer checks that unrelated settings survive a Dotenv round trip, escapes credentials, and atomically replaces .env with a private sibling file. On Unix the new file uses mode 0600. Windows requires a restricted inherited ACL on the application directory. Dotenv metavalues such as a literal password of null remain literal for installer-managed MySQL credentials.
+Finalization prepares .env before DDL and replaces it only after the database transaction commits. Existing valid application keys are preserved. A fresh installation generates a key automatically. Installer sessions use a separate temporary key. The writer checks that unrelated settings survive a Dotenv round trip, escapes credentials, and atomically replaces .env with a private sibling file. On Unix the new file uses mode 0600. Windows requires a restricted inherited ACL on the application directory. Dotenv metavalues such as a literal password of null remain literal for installer-managed network database credentials.
 
 Use an uncached configuration for installation. The writer refuses conflicting process-level environment overrides and a selected environment file other than .env. Where applicable, have the hosting operator align overrides, use the standard .env, and deploy without bootstrap/cache/config.php. The PHP account needs write access to the private installer directory and the application directory above public/ during finalization. After completion, restore the application's normal filesystem permissions.
 
@@ -63,6 +68,6 @@ If DDL was interrupted before the database transaction committed, or if the leas
 
 If .env is missing on a completed deployment, keep the installed marker and restore the original APP_KEY, private settings and database access from backups. Preserve the marker across releases. Restoring the original key matters for previously encrypted data. Do not recreate the first administrator to recover configuration. See [Security](security.md) and [Database](database.md).
 
-## Prompt 06 integration
+## Authentication handoff
 
-Provide the normal named login route. /setup-complete forwards to it with a success message, using the normal application session. Require a completed installation before enabling account authentication. The installer never signs the administrator in. Use User::isSuperAdmin() for authorization decisions and keep is_super_admin outside normal registration and profile assignment. The login flow owns redirection to /dashboard.
+/setup-complete forwards to /login with a success message using the normal application session. The installer does not authenticate the administrator. See [Authentication](authentication.md) for session, recovery, and authorization details.

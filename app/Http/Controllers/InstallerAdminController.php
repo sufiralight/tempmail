@@ -6,6 +6,7 @@ use App\Http\Requests\FinishInstallation;
 use App\Installation\InstallerFinalizer;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 final class InstallerAdminController extends Controller
@@ -22,10 +23,14 @@ final class InstallerAdminController extends Controller
         return new RedirectResponse('/setup-complete', 303);
     }
 
-    public function complete(): View|RedirectResponse
+    public function complete(Request $request): View|RedirectResponse
     {
-        return Route::has('login')
-            ? redirect()->route('login')->with('status', 'Workspace setup is complete. Sign in with your administrator account.')
-            : view('installation.complete');
+        if (! Route::has('login')) {
+            return view('installation.complete');
+        }
+
+        $request->session()->flash('status', 'Workspace setup is complete. Sign in with your administrator account.');
+
+        return new RedirectResponse(route('login', absolute: false));
     }
 }

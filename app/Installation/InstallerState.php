@@ -14,6 +14,7 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
+/** @phpstan-import-type Settings from InstallerDatabase */
 final class InstallerState
 {
     public const LIFETIME_MINUTES = 15;
@@ -86,7 +87,7 @@ final class InstallerState
         });
     }
 
-    /** @param array{host: string, port: int, database: string, username: string, password: string} $database */
+    /** @param Settings $database */
     public function completeVerification(Request $request, string $attempt, #[\SensitiveParameter] array $database): void
     {
         $cipher = $this->cipher();
@@ -119,7 +120,7 @@ final class InstallerState
     }
 
     /**
-     * @param  Closure(string, array{host: string, port: int, database: string, username: string, password: string}): void  $finish
+     * @param  Closure(string, Settings): void  $finish
      */
     public function finalize(Request $request, Closure $finish): void
     {
@@ -146,7 +147,7 @@ final class InstallerState
         });
     }
 
-    /** @return array{host: string, port: int, database: string, username: string, password: string}|null */
+    /** @return Settings|null */
     public function verifiedDatabase(Request $request): ?array
     {
         $payload = $this->verifiedPayload($request);

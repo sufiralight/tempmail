@@ -15,7 +15,7 @@ final class InstallationAccess
     }
 
     /**
-     * @return array{local: bool, host: string, port: int, scope: string}|null
+     * @return array{local: bool, host: string, port: int, scope: string, engine: ?string}|null
      */
     public function forRequest(Request $request): ?array
     {
@@ -53,13 +53,15 @@ final class InstallationAccess
                 return null;
             }
 
-            return ['local' => true, 'host' => '127.0.0.1', 'port' => 3306, 'scope' => $scope];
+            return ['local' => true, 'host' => '127.0.0.1', 'port' => 3306, 'scope' => $scope, 'engine' => null];
         }
 
         $domain = $gate['host'] ?? null;
         $operator = $gate['operator_ip'] ?? null;
-        $dbHost = $gate['database_host'] ?? null;
-        $dbPort = $gate['database_port'] ?? null;
+        $driver = $gate['database_engine'] ?? 'mysql';
+        $engine = is_string($driver) ? DatabaseEngine::tryFrom($driver) : null;
+        $dbHost = $gate['database_host'] ?? '';
+        $dbPort = $gate['database_port'] ?? $engine?->port() ?? 0;
 
         if (($gate['mode'] ?? null) !== 'production'
             || ! is_string($domain) || ! $this->validHostname($domain)
@@ -67,12 +69,18 @@ final class InstallationAccess
             || inet_pton($peer) !== inet_pton($operator)
             || ! in_array($httpHost, [strtolower($domain), strtolower($domain).':443'], true)
             || ! in_array(strtolower((string) $request->server('HTTPS')), ['on', '1'], true)
-            || ! is_string($dbHost) || ! $this->validHostname($dbHost)
-            || ! is_int($dbPort) || $dbPort < 1 || $dbPort > 65535) {
+            || $engine === null
+            || ($engine !== DatabaseEngine::Sqlite && (
+                ! is_string($dbHost) || ! $this->validHostname($dbHost)
+                || ! is_int($dbPort) || $dbPort < 1 || $dbPort > 65535
+            ))) {
             return null;
         }
 
-        return ['local' => false, 'host' => strtolower($dbHost), 'port' => $dbPort, 'scope' => $scope];
+        return [
+            'local' => false, 'host' => $engine === DatabaseEngine::Sqlite ? '' : strtolower($dbHost),
+            'port' => $engine === DatabaseEngine::Sqlite ? 0 : $dbPort, 'scope' => $scope, 'engine' => $engine->value,
+        ];
     }
 
     private function validHostname(string $host): bool

@@ -1,6 +1,6 @@
 # Authorization
 
-The installer provisions the first Super Admin through the authorized finalization operation. The users.is_super_admin flag defaults to false and is excluded from mass assignment. User::isSuperAdmin() exposes the decision to future Gates and Policies. The workspace_installation record preserves the initial account reference. The remaining permissions below are planned.
+The installer provisions the first Super Admin through the authorized finalization operation. The users.is_super_admin flag defaults to false and is excluded from mass assignment. User::isSuperAdmin() backs the access-admin Gate on /admin. Registration rejects submitted role fields. Later resources still need their own Gates or Policies. The workspace_installation record preserves the initial account reference. The remaining permissions below are planned.
 
 | Actor | Intended access |
 | --- | --- |

@@ -2,7 +2,7 @@
 
 Requests enter [public/index.php](../public/index.php), load [bootstrap/app.php](../bootstrap/app.php), pass through Laravel middleware, and reach [web routes](../routes/web.php). GET / renders the welcome Blade view. Laravel registers GET /up for application health. Bootstrap selects JSON exception responses for requests under api/* or requests expecting JSON. Package and framework routes may appear in the route listing. Inspect them with php artisan route:list before relying on the public surface.
 
-The foundation uses the default App namespace, Laravel configuration and migration paths, Blade views, and Vite entry points. The following ownership map describes planned modules.
+The foundation uses the default App namespace, Laravel configuration and migration paths, Blade views, and Vite entry points. Installation and core Authentication are implemented. The ownership map also covers later modules and extensions.
 
 | Module | Owns | Expected dependencies |
 | --- | --- | --- |

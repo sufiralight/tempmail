@@ -3,17 +3,14 @@
 namespace App\Installation;
 
 use Illuminate\Database\Connection;
-use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use PDO;
-use Pdo\Mysql;
-use RuntimeException;
 use Throwable;
 
+/** @phpstan-import-type Settings from InstallerDatabase */
 final class InstallerFinalizer
 {
     private const CONNECTION = 'installer_finalization';
@@ -21,7 +18,7 @@ final class InstallerFinalizer
     public function __construct(
         private InstallerState $state,
         private InstallerEnvironment $environment,
-        private DatabaseManager $databases,
+        private InstallerDatabase $database,
         private Migrator $migrator,
     ) {}
 
@@ -42,32 +39,48 @@ final class InstallerFinalizer
     }
 
     /**
-     * @param  array{host: string, port: int, database: string, username: string, password: string}  $settings
+     * @param  Settings  $settings
      * @param  array{name: string, email: string, password: string}  $administrator
      */
     private function install(Request $request, string $directory, #[\SensitiveParameter] array $settings, #[\SensitiveParameter] array $administrator): void
     {
         $environment = $this->environment->prepare($request, $settings);
         $path = $directory.'/finalization';
-        $target = hash('sha256', json_encode([$settings['host'], $settings['port'], $settings['database'], $settings['username']], JSON_THROW_ON_ERROR));
+        $identity = [$settings['host'], $settings['port'], $settings['database'], $settings['username']];
+        $engine = DatabaseEngine::from($settings['engine'] ?? 'mysql');
+        if ($engine !== DatabaseEngine::MySql) {
+            $identity[] = $engine->value;
+        }
+        $target = hash('sha256', json_encode($identity, JSON_THROW_ON_ERROR));
         $checkpoint = $this->checkpoint($path, $target);
+        $fresh = $checkpoint === null;
 
-        $connection = $this->connect($settings);
-        try {
-            if ($connection->scalar('SELECT DATABASE()', [], false) !== $settings['database']) {
+        if ($engine === DatabaseEngine::Sqlite) {
+            if (! $this->database->sqliteFileAvailable($fresh)) {
                 throw new InstallationRecoveryRequired;
             }
 
-            $lock = 'tempmail:'.substr(hash('sha256', strtolower($settings['database'])), 0, 48);
-            if ((int) $connection->scalar('SELECT GET_LOCK(?, 0)', [$lock], false) !== 1) {
+            if ($fresh) {
+                $checkpoint = $this->startCheckpoint($path, $target);
+                $this->database->reserveSqlite();
+            }
+        }
+
+        try {
+            $connection = $this->database->connect(self::CONNECTION, $settings);
+            if (! $this->database->matchesTarget($connection, $settings['database'])) {
+                throw new InstallationRecoveryRequired;
+            }
+
+            if (! $this->database->lock($connection, $settings['database'])) {
                 abort(409);
             }
 
-            $fresh = $checkpoint === null;
             if ($fresh) {
-                $this->requireEmpty($connection);
-                $checkpoint = ['target' => $target, 'operation' => (string) Str::uuid(), 'stage' => 'migrating'];
-                $this->saveCheckpoint($path, $checkpoint);
+                if (! $this->database->empty($connection)) {
+                    throw new InstallationRecoveryRequired;
+                }
+                $checkpoint ??= $this->startCheckpoint($path, $target);
                 Log::notice('Installer migration started.');
 
                 $this->migrator->usingConnection(self::CONNECTION, function (): void {
@@ -84,52 +97,17 @@ final class InstallerFinalizer
             $this->saveCheckpoint($path, $checkpoint);
             $this->environment->persist($environment);
         } finally {
-            $this->databases->purge(self::CONNECTION);
+            $this->database->close(self::CONNECTION);
         }
     }
 
-    /** @param array{host: string, port: int, database: string, username: string, password: string} $settings */
-    private function connect(#[\SensitiveParameter] array $settings): Connection
+    /** @return array{target: string, operation: string, stage: string} */
+    private function startCheckpoint(string $path, string $target): array
     {
-        $options = [
-            PDO::ATTR_TIMEOUT => 3,
-            Mysql::ATTR_LOCAL_INFILE => false,
-            Mysql::ATTR_MULTI_STATEMENTS => false,
-        ];
+        $checkpoint = ['target' => $target, 'operation' => (string) Str::uuid(), 'stage' => 'migrating'];
+        $this->saveCheckpoint($path, $checkpoint);
 
-        $ca = config('database.connections.mysql.options')[Mysql::ATTR_SSL_CA] ?? null;
-        if (is_string($ca) && $ca !== '') {
-            $options[Mysql::ATTR_SSL_CA] = $ca;
-            $options[Mysql::ATTR_SSL_VERIFY_SERVER_CERT] = true;
-        }
-
-        $connection = $this->databases->connectUsing(self::CONNECTION, $settings + [
-            'driver' => 'mysql',
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => '',
-            'strict' => true,
-            'engine' => 'InnoDB',
-            'options' => $options,
-        ]);
-
-        if (! $connection instanceof Connection) {
-            throw new RuntimeException('Unexpected installation connection.');
-        }
-
-        // Reconnecting would lose the database advisory lock.
-        $connection->setReconnector(static fn () => throw new RuntimeException('Installation connection was interrupted.'));
-
-        return $connection;
-    }
-
-    private function requireEmpty(Connection $connection): void
-    {
-        if ($connection->selectOne('SHOW FULL TABLES', [], false) !== null
-            || $connection->selectOne('SELECT 1 FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = DATABASE() LIMIT 1', [], false) !== null
-            || $connection->selectOne('SELECT 1 FROM information_schema.EVENTS WHERE EVENT_SCHEMA = DATABASE() LIMIT 1', [], false) !== null) {
-            throw new InstallationRecoveryRequired;
-        }
+        return $checkpoint;
     }
 
     private function requireCompletedMigrations(): void

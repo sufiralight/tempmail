@@ -61,3 +61,15 @@ Use a new identifier when replacing a decision and link both records. Dates belo
 **Decision** Centralize shared Blade components using Pure Zinc tokens, Geist, Lucide, and a WCAG 2.2 AA target.
 
 **Consequences** Component changes affect all consumers and require theme and accessibility checks. See [Design system](design-system.md) and [Components](components.md).
+
+## ADR-006 Native authentication and engine-specific installation
+
+**Date** 2026-11-12
+
+**Status** Accepted
+
+**Context** Shared hosts vary in available PDO drivers. Installation must remain owner-controlled while the application supports normal members and its initial administrator.
+
+**Decision** Use Laravel's native connectors and schema tools. Select the database engine at verification and carry it through the installation lease. Use a native session guard and a server-controlled administrator Gate.
+
+**Consequences** Database locking and emptiness checks vary by engine. Validate supported deployments against their real PHP drivers and server versions. Authentication remains closed until setup has completed.

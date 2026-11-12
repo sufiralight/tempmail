@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\VerifyInstallerDatabase;
+use App\Installation\DatabaseEngine;
 use App\Installation\DatabaseVerifier;
 use App\Installation\InstallationRecoveryRequired;
 use App\Installation\InstallerState;
@@ -23,8 +24,13 @@ final class InstallerController extends Controller
             throw new InstallationRecoveryRequired;
         }
 
+        $access = $request->attributes->get('installer.access');
+        $initial = $access['engine'] ?? $request->session()->get('installer.engine', 'mysql');
+
         return view('installation.database', [
-            'access' => $request->attributes->get('installer.access'),
+            'access' => $access,
+            'engines' => DatabaseEngine::cases(),
+            'initial' => DatabaseEngine::tryFrom($initial) ?? DatabaseEngine::MySql,
             'verified' => $verified,
             'pendingFinalization' => $pendingFinalization,
             'expired' => ! $verified && $request->session()->pull('installer.verified', false),
@@ -36,7 +42,7 @@ final class InstallerController extends Controller
         $settings = $request->settings();
 
         if (! $verifier->verify($settings)) {
-            return (new RedirectResponse('/install'))->setSession(app(Store::class))->withErrors([
+            return (new RedirectResponse('/install'))->setSession(app(Store::class))->with('installer.engine', $settings['engine'] ?? 'mysql')->withErrors([
                 'connection' => 'Could not verify an empty database. Check the host, port, database name and credentials, and confirm the database has no tables or views.',
             ]);
         }

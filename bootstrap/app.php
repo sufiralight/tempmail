@@ -21,11 +21,12 @@ $app = Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(PrepareInstaller::class);
+        $middleware->redirectUsersTo('/dashboard');
         $middleware->trimStrings(except: ['database_password']);
         $middleware->web(replace: [PreventRequestForgery::class => VerifyWebRequestForgery::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->dontFlash(['database_password']);
+        $exceptions->dontFlash(['database_password', 'token']);
         $exceptions->dontReportWhen(fn () => request()->is('install', 'install/*'));
         $exceptions->render(function (Throwable $exception, Request $request) {
             if (! $request->is('install', 'install/*')) {

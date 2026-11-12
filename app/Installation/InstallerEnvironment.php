@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Env;
 use RuntimeException;
 
+/** @phpstan-import-type Settings from InstallerDatabase */
 class InstallerEnvironment
 {
     /** @var list<string> */
@@ -30,7 +31,7 @@ class InstallerEnvironment
     }
 
     /**
-     * @param  array{host: string, port: int, database: string, username: string, password: string}  $database
+     * @param  Settings  $database
      * @return array{path: string, previous: ?string, contents: string}
      */
     public function prepare(Request $request, #[\SensitiveParameter] array $database): array
@@ -60,16 +61,17 @@ class InstallerEnvironment
         }
 
         $local = $request->attributes->get('installer.access')['local'];
+        $engine = DatabaseEngine::from($database['engine'] ?? 'mysql');
         $values = [
             'APP_KEY' => $key,
             'APP_ENV' => $local ? ($existing['APP_ENV'] ?? 'local') : 'production',
             'APP_URL' => $local ? ($existing['APP_URL'] ?? $request->getSchemeAndHttpHost()) : 'https://'.$request->getHost(),
-            'DB_CONNECTION' => 'mysql',
+            'DB_CONNECTION' => $engine->value,
             'DB_URL' => '',
             'DB_SOCKET' => '',
             'DB_HOST' => $database['host'],
             'DB_PORT' => (string) $database['port'],
-            'DB_DATABASE' => $database['database'],
+            'DB_DATABASE' => $engine === DatabaseEngine::Sqlite ? app(InstallerDatabase::class)->sqlitePath() : $database['database'],
             'DB_USERNAME' => $database['username'],
             'DB_PASSWORD' => $database['password'],
             'DB_INSTALLER_LITERAL' => 'true',

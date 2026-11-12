@@ -20,9 +20,13 @@ final class PrepareInstaller
         $installer = $request->is('install', 'install/*');
         $home = $request->is('/') && $request->isMethodSafe();
 
-        if ($request->is('setup-complete')) {
+        if ($request->is('setup-complete', 'login', 'register', 'logout', 'forgot-password', 'reset-password', 'reset-password/*', 'dashboard', 'admin')) {
             if (! $this->access->installed() || ! config('app.key') || ! is_file(app()->environmentFilePath())) {
-                return $this->private(new Response('Workspace setup status is unavailable.', 404));
+                if ($request->isMethodSafe() && $this->access->forRequest($request) !== null) {
+                    return $this->private(new RedirectResponse('/install'));
+                }
+
+                return $this->private(new Response('Workspace access is unavailable until installation is complete.', 404));
             }
 
             return $this->private($next($request));

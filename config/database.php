@@ -4,7 +4,7 @@ use Illuminate\Support\Env;
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
-$mysqlValue = static fn (string $key) => env('DB_INSTALLER_LITERAL', false)
+$databaseValue = static fn (string $key) => env('DB_INSTALLER_LITERAL', false)
     ? (Env::getRepository()->get($key) ?? '')
     : env($key, '');
 
@@ -54,9 +54,9 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => $mysqlValue('DB_DATABASE'),
-            'username' => $mysqlValue('DB_USERNAME'),
-            'password' => $mysqlValue('DB_PASSWORD'),
+            'database' => $databaseValue('DB_DATABASE'),
+            'username' => $databaseValue('DB_USERNAME'),
+            'password' => $databaseValue('DB_PASSWORD'),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
@@ -74,9 +74,9 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', ''),
-            'username' => env('DB_USERNAME', ''),
-            'password' => env('DB_PASSWORD', ''),
+            'database' => $databaseValue('DB_DATABASE'),
+            'username' => $databaseValue('DB_USERNAME'),
+            'password' => $databaseValue('DB_PASSWORD'),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
@@ -94,9 +94,9 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', ''),
-            'username' => env('DB_USERNAME', ''),
-            'password' => env('DB_PASSWORD', ''),
+            'database' => $databaseValue('DB_DATABASE'),
+            'username' => $databaseValue('DB_USERNAME'),
+            'password' => $databaseValue('DB_PASSWORD'),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
@@ -109,14 +109,14 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', 'localhost'),
             'port' => env('DB_PORT', '1433'),
-            'database' => env('DB_DATABASE', ''),
-            'username' => env('DB_USERNAME', ''),
-            'password' => env('DB_PASSWORD', ''),
+            'database' => $databaseValue('DB_DATABASE'),
+            'username' => $databaseValue('DB_USERNAME'),
+            'password' => $databaseValue('DB_PASSWORD'),
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            // 'encrypt' => env('DB_ENCRYPT', 'yes'),
-            // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
+            'encrypt' => env('DB_ENCRYPT', 'yes'),
+            'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'no'),
         ],
 
     ],

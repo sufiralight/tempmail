@@ -2,7 +2,7 @@
     <div class="mb-6">
         <p class="ui-help mb-2">Workspace setup</p>
         <h1 class="ui-page-title">Connect your database</h1>
-        <p class="ui-help mt-2">Enter your MySQL database details to configure your workspace.</p>
+        <p class="ui-help mt-2">Choose a database engine to configure your workspace.</p>
     </div>
 
     @if ($verified)
@@ -28,12 +28,33 @@
 
     @unless ($pendingFinalization)
     <x-ui.card>
-        <form method="post" action="/install" class="grid gap-4">
+        @php
+            $options = collect($engines)->mapWithKeys(fn ($engine) => [$engine->value => [
+                'port' => $access['local'] ? $engine->port() : $access['port'],
+                'enabled' => $engine->available() && ($access['local'] || $access['engine'] === $engine->value),
+            ]]);
+        @endphp
+        <form method="post" action="/install" class="grid gap-4"
+            x-data="{ engine: @js($initial->value), port: @js($options[$initial->value]['port']), options: @js($options) }">
             @csrf
+            <x-ui.select name="engine" id="db-engine" label="Database engine" x-model="engine" x-on:change="port = options[$event.target.value].port" required>
+                @foreach ($engines as $engine)
+                    <option value="{{ $engine->value }}" @selected($initial === $engine) @disabled(! $options[$engine->value]['enabled'])>
+                        {{ $engine->label() }}{{ ! $engine->available() ? ' · requires '.$engine->extension() : (! $options[$engine->value]['enabled'] ? ' · outside deployment configuration' : '') }}
+                    </option>
+                @endforeach
+            </x-ui.select>
+            <p class="ui-help" x-cloak x-show="engine === 'sqlsrv'">SQL Server requires PDO SQLSRV, a compatible Microsoft ODBC driver, and a trusted TLS certificate with the default settings.</p>
+            @if (! $initial->available())
+                <x-ui.alert variant="warning" title="Database driver unavailable">
+                    Enable {{ $initial->extension() }} on the hosting server. SQL Server also requires a compatible Microsoft ODBC driver.
+                </x-ui.alert>
+            @endif
+            <fieldset class="grid gap-4" x-show="engine !== 'sqlite'" :disabled="engine === 'sqlite'" @disabled($initial->value === 'sqlite')>
             <div class="grid gap-4 sm:grid-cols-[1fr_8rem]">
                 <x-ui.input name="host" id="db-host" label="Database host" :value="$access['host']"
                     autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="253" required />
-                <x-ui.input name="port" id="db-port" label="Database port" type="number" :value="$access['port']"
+                <x-ui.input name="port" id="db-port" label="Database port" type="number" :value="$options[$initial->value]['port']" x-model="port"
                     min="1" max="65535" inputmode="numeric" required />
             </div>
             <x-ui.input name="database" id="db-name" label="Database name" maxlength="64"
@@ -43,7 +64,10 @@
             <x-ui.password-field name="database_password" id="db-password" label="Database password" maxlength="512"
                 autocomplete="off" :help="$access['local'] ? 'Leave blank if the local database account has no password.' : null"
                 :required="! $access['local']" />
-            <x-ui.button type="submit" size="lg" busy-on-submit loading-label="Verifying connection...">
+            </fieldset>
+            <p class="ui-help" x-cloak x-show="engine === 'sqlite'">Setup will create a new database in private application storage after you finish. No file path is needed.</p>
+            <x-ui.button type="submit" size="lg" busy-on-submit loading-label="Verifying connection..."
+                :disabled="! $options[$initial->value]['enabled']" ::disabled="!options[engine]?.enabled">
                 {{ $verified ? 'Verify another connection' : 'Verify connection' }}
             </x-ui.button>
         </form>
