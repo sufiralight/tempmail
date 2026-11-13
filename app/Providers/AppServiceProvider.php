@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Auth\WorkspaceRole;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
@@ -31,7 +32,10 @@ class AppServiceProvider extends ServiceProvider
     {
         DevCommands::except('queue');
 
-        Gate::define('access-admin', static fn (User $user): bool => $user->isSuperAdmin());
+        foreach (WorkspaceRole::SuperAdmin->permissions() as $permission) {
+            Gate::define($permission, static fn (User $user): bool => $user->is_active === true
+                && in_array($permission, $user->workspaceRole()->permissions(), true));
+        }
         ResetPassword::createUrlUsing(static fn (User $user, string $token): string => rtrim((string) config('app.url'), '/').route('password.reset', [
             'token' => $token, 'email' => $user->getEmailForPasswordReset(),
         ], absolute: false)

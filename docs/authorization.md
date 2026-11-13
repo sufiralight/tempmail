@@ -1,13 +1,17 @@
-# Authorization
+# Workspace authorization
 
-The installer provisions the first Super Admin through the authorized finalization operation. The users.is_super_admin flag defaults to false and is excluded from mass assignment. User::isSuperAdmin() backs the access-admin Gate on /admin. Registration rejects submitted role fields. Later resources still need their own Gates or Policies. The workspace_installation record preserves the initial account reference. The remaining permissions below are planned.
+The installer-created Super Admin retains authority through the existing is_super_admin flag. The added role field stores member and admin assignments. WorkspaceRole resolves the effective role and registers these permissions through Laravel Gates.
 
-| Actor | Intended access |
+| Role | Permissions |
 | --- | --- |
-| Guest | Public routes and applicable guest account flows |
-| Normal user | Own profile and authorized account resources, including owned media |
-| Super Admin | Explicitly granted administration and global branding operations |
+| user | dashboard.view |
+| admin | dashboard.view, admin.access, users.view, settings.view |
+| super_admin | All admin permissions plus users.manage, roles.manage, settings.manage, audit.view |
 
-Use middleware for broad access requirements, Gates for global abilities, and model Policies for ownership-sensitive records. Authorize reads and writes at the server boundary. Scope list queries before pagination and authorize route-bound records before mutation or download. Super Admin privileges require explicit ability checks. Guard role fields from request assignment and audit privilege and branding changes.
+Every console route requires an active authenticated account, verified email, and the relevant Gate. User mutations also use UserPolicy. Public signup creates active members. Privileged fields are excluded from mass assignment. Disabled accounts cannot sign in and lose access on the next protected request.
 
-Test guest requests, same-owner and other-owner access, and each privileged action with and without the required ability. See [Authentication](authentication.md) and [Media Library](media-library.md).
+The Super Admin can change roles and activation with explicit confirmation. A transaction writes the singleton workspace settings row to serialize competing mutations, then reloads the actor and target before authorizing the operation. It protects the last active Super Admin. There is no account deletion endpoint. The installation record retains its original administrator reference.
+
+The console exposes /admin, /admin/users, /admin/users/{user}, /admin/roles, /admin/settings and /admin/audit-logs. Role definitions are fixed in code. Settings persist the console display name. Administrative audit rows record actor and target IDs, action, timestamp and allowlisted metadata. They have no public write route.
+
+Run the additive workspace administration migration in a controlled release before opening authenticated routes on existing installations. New installs apply it through the existing installer. See [Database](database.md) and [Authentication](authentication.md).

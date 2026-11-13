@@ -20,7 +20,7 @@ final class PrepareInstaller
         $installer = $request->is('install', 'install/*');
         $home = $request->is('/') && $request->isMethodSafe();
 
-        if ($request->is('setup-complete', 'login', 'register', 'logout', 'forgot-password', 'reset-password', 'reset-password/*', 'email/verify', 'email/verify/*', 'email/verification-notification', 'dashboard', 'admin')) {
+        if ($request->is('setup-complete', 'login', 'register', 'logout', 'forgot-password', 'reset-password', 'reset-password/*', 'email/verify', 'email/verify/*', 'email/verification-notification', 'dashboard', 'admin', 'admin/*')) {
             if (! $this->access->installed() || ! config('app.key') || ! is_file(app()->environmentFilePath())) {
                 if ($request->isMethodSafe() && $this->access->forRequest($request) !== null) {
                     return $this->private(new RedirectResponse('/install'));

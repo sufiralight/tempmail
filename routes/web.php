@@ -5,7 +5,9 @@ use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\InstallerAdminController;
 use App\Http\Controllers\InstallerController;
 use App\Http\Controllers\PasswordRecoveryController;
+use App\Http\Controllers\WorkspaceAdminController;
 use App\Http\Middleware\BeginDatabaseVerification;
+use App\Http\Middleware\RequireActiveAccount;
 use App\Http\Middleware\RequireVerifiedInstallation;
 use App\Http\Middleware\ThrottleInstallation;
 use Illuminate\Support\Facades\Route;
@@ -36,19 +38,26 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/reset-password', [PasswordRecoveryController::class, 'reset'])->middleware('throttle:password-recovery');
 });
 
-Route::middleware(['auth', 'auth.session'])->group(function (): void {
+Route::middleware(['auth', 'auth.session', RequireActiveAccount::class])->group(function (): void {
     Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
     Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
         ->middleware(['signed:relative', 'throttle:6,1'])->name('verification.verify');
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
         ->middleware('throttle:verification-resend')->name('verification.send');
     Route::post('/logout', [AccountController::class, 'logout'])->name('logout');
-    Route::view('/dashboard', 'auth.workspace', [
-        'title' => 'Your workspace', 'description' => 'You are signed in to Temp Mail.',
-    ])->name('dashboard');
-    Route::view('/admin', 'auth.workspace', [
-        'title' => 'Administration', 'description' => 'You are signed in with Super Admin access.',
-    ])->middleware(['can:access-admin', 'verified'])->name('admin');
+    Route::view('/dashboard', 'workspace.dashboard')->middleware('can:dashboard.view')->name('dashboard');
+    Route::prefix('admin')->middleware(['can:admin.access', 'verified'])->group(function (): void {
+        Route::get('/', [WorkspaceAdminController::class, 'overview'])->name('admin');
+        Route::get('/users', [WorkspaceAdminController::class, 'users'])->middleware('can:users.view')->name('admin.users');
+        Route::get('/users/{user}', [WorkspaceAdminController::class, 'user'])->middleware('can:users.view')->name('admin.users.show');
+        Route::patch('/users/{user}', [WorkspaceAdminController::class, 'updateUser'])
+            ->middleware(['can:manage,user', 'throttle:10,1'])->name('admin.users.update');
+        Route::get('/roles', [WorkspaceAdminController::class, 'roles'])->middleware('can:roles.manage')->name('admin.roles');
+        Route::get('/settings', [WorkspaceAdminController::class, 'settings'])->middleware('can:settings.view')->name('admin.settings');
+        Route::patch('/settings', [WorkspaceAdminController::class, 'updateSettings'])
+            ->middleware(['can:settings.manage', 'throttle:10,1'])->name('admin.settings.update');
+        Route::get('/audit-logs', [WorkspaceAdminController::class, 'audits'])->middleware('can:audit.view')->name('admin.audits');
+    });
 });
 
 Route::get('/', function () {

@@ -26,7 +26,7 @@ final class AccountController extends Controller
     public function authenticate(LoginRequest $request): RedirectResponse
     {
         try {
-            $authenticated = Auth::attempt($request->safe()->only(['email', 'password']));
+            $authenticated = Auth::attempt($request->safe()->only(['email', 'password']) + ['is_active' => true]);
         } catch (QueryException) {
             Log::warning('Account authentication database operation failed.');
             $authenticated = false;
@@ -52,7 +52,7 @@ final class AccountController extends Controller
             }
         }
 
-        return new RedirectResponse($intended === url('/admin') && $request->user()?->can('access-admin')
+        return new RedirectResponse($intended === url('/admin') && $request->user()?->can('admin.access')
             ? '/admin'
             : '/dashboard');
     }

@@ -203,4 +203,40 @@ class AuthenticationTest extends TestCase
         Notification::assertSentToTimes($admin, VerifyEmail::class, 3);
         Notification::assertSentTo($admin, VerifyEmail::class, fn (VerifyEmail $mail) => str_starts_with($mail->toMail($admin)->actionUrl, 'https://mail.example.test/email/verify/'));
     }
+
+    public function test_workspace_permissions_changes_and_audits(): void
+    {
+        $owner = User::factory()->create();
+        $owner->forceFill(['is_super_admin' => true])->save();
+        $admin = User::factory()->create();
+        $admin->forceFill(['role' => 'admin'])->save();
+        $member = User::factory()->create(['name' => 'Unique Member']);
+        User::factory()->count(22)->create();
+
+        $this->actingAs($member)->get('/dashboard')->assertOk()->assertSee('Unique Member')
+            ->assertSee('data-page-progress-root', false)->assertDontSee('href="/admin/users"', false);
+        $this->get('/admin/users')->assertForbidden();
+        $this->actingAs($admin)->get('/admin/users?q=Unique&role=user')->assertOk()->assertSee('Unique Member');
+        $this->get('/admin/users?page=2')->assertOk()->assertSee('Page 2');
+        $this->get('/admin/settings')->assertOk();
+        $this->patch('/admin/settings', ['display_name' => 'Forbidden'])->assertForbidden();
+        $this->patch('/admin/users/'.$admin->id, ['role' => 'super_admin', 'active' => true, 'confirmed' => true])->assertForbidden();
+        $this->get('/admin/audit-logs')->assertForbidden();
+
+        $this->actingAs($owner)->get('/admin/roles')->assertOk()->assertSee('Super Admin');
+        $this->patch('/admin/users/'.$owner->id, ['role' => 'user', 'active' => false, 'confirmed' => true])
+            ->assertSessionHasErrors('role');
+        $this->assertTrue($owner->fresh()->isSuperAdmin());
+        $this->patch('/admin/users/'.$member->id, [
+            'role' => 'admin', 'active' => false, 'confirmed' => true, 'password' => 'never-audit-this',
+        ])->assertRedirect();
+        $this->assertFalse($member->fresh()->is_active);
+        $this->assertSame('admin', $member->fresh()->workspaceRole()->value);
+        $this->patch('/admin/settings', ['display_name' => 'Fixture Workspace'])->assertRedirect();
+        $this->get('/admin/settings')->assertOk()->assertSee('Fixture Workspace');
+        $this->get('/admin/audit-logs')->assertOk()->assertSee('user.role_changed')
+            ->assertSee('user.deactivated')->assertSee('settings.updated')->assertDontSee('never-audit-this');
+        $this->assertDatabaseHas('administrative_audits', ['action' => 'user.change_denied', 'actor_id' => $owner->id]);
+        $this->actingAs($member->fresh())->get('/dashboard')->assertRedirect('/login');
+    }
 }

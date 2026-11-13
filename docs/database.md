@@ -19,3 +19,5 @@ Finalization rechecks the target and takes a database-scoped advisory lock for n
 Later modules must supply their own portable migrations. Use a controlled release with backups and a recovery plan. The migration ledger records applied changes. Test fresh installation and upgrades against isolated instances of each affected engine. SQLite results alone cannot establish network-engine compatibility.
 
 On Windows, local validation exercised the sqlite, mysql and mariadb Laravel paths, with both network paths using an isolated MariaDB server. PostgreSQL PDO was present without a test server. PDO SQLSRV and a SQL Server fixture were unavailable. No separate native MySQL server or live cPanel host was tested.
+
+The workspace administration migration adds role and activation columns plus settings and audit tables. Apply it in a controlled release on existing installations. Its shared settings row serializes privileged mutations.

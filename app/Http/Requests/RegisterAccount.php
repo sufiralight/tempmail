@@ -18,6 +18,7 @@ final class RegisterAccount extends LoginRequest
             'password_confirmation' => ['required', 'string'],
             'is_super_admin' => ['missing'],
             'role' => ['missing'],
+            'is_active' => ['missing'],
         ];
     }
 }

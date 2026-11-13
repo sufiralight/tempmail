@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Auth\AccountMail;
+use App\Auth\WorkspaceRole;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -18,6 +19,8 @@ class User extends Authenticatable implements MustVerifyEmail
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected $attributes = ['role' => 'user', 'is_active' => true];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -29,12 +32,22 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_super_admin' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
     public function isSuperAdmin(): bool
     {
         return $this->is_super_admin === true;
+    }
+
+    public function workspaceRole(): WorkspaceRole
+    {
+        return match (true) {
+            $this->isSuperAdmin() => WorkspaceRole::SuperAdmin,
+            $this->role === 'admin' => WorkspaceRole::Admin,
+            default => WorkspaceRole::User,
+        };
     }
 
     public function sendEmailVerificationNotification(): void
