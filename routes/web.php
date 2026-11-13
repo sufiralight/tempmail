@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\InstallerAdminController;
 use App\Http\Controllers\InstallerController;
 use App\Http\Controllers\PasswordRecoveryController;
@@ -36,13 +37,18 @@ Route::middleware('guest')->group(function (): void {
 });
 
 Route::middleware(['auth', 'auth.session'])->group(function (): void {
+    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed:relative', 'throttle:6,1'])->name('verification.verify');
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
+        ->middleware('throttle:verification-resend')->name('verification.send');
     Route::post('/logout', [AccountController::class, 'logout'])->name('logout');
     Route::view('/dashboard', 'auth.workspace', [
         'title' => 'Your workspace', 'description' => 'You are signed in to Temp Mail.',
     ])->name('dashboard');
     Route::view('/admin', 'auth.workspace', [
         'title' => 'Administration', 'description' => 'You are signed in with Super Admin access.',
-    ])->middleware('can:access-admin')->name('admin');
+    ])->middleware(['can:access-admin', 'verified'])->name('admin');
 });
 
 Route::get('/', function () {

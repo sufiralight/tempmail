@@ -15,6 +15,7 @@
     @endif
 </head>
 <body class="flex min-h-screen flex-col">
+    <x-ui.page-progress />
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:bg-surface focus:p-2">Skip to content</a>
     <header class="border-b border-border bg-surface">
         <div class="ui-container flex min-h-16 flex-wrap items-center justify-between gap-3 py-2">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Auth\AccountMail;
 use App\Http\Requests\ResetAccountPassword;
 use App\Http\Requests\SendResetLink;
 use App\Models\User;
@@ -9,6 +10,8 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Session\Store;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -22,17 +25,13 @@ final class PasswordRecoveryController extends Controller
         return view('auth.forgot-password');
     }
 
-    public function sendLink(SendResetLink $request): RedirectResponse
+    public function sendLink(SendResetLink $request, AccountMail $mail): RedirectResponse
     {
-        $mailer = config('mail.default');
-        $transport = config('mail.mailers.'.$mailer.'.transport');
-        // Exclude log and composite mailers that could fall back to logging a reset token.
-        if (in_array($transport, ['smtp', 'sendmail', 'ses', 'ses-v2', 'postmark', 'resend', 'mailgun'], true)) {
-            try {
-                Password::sendResetLink($request->safe()->only(['email']));
-            } catch (Throwable) {
-                Log::warning('Password reset notification could not be sent.');
-            }
+        $email = $request->validated('email');
+        try {
+            Cache::lock($this->lockKey($email), 30)->block(2, static fn () => $mail->sendResetLink($email));
+        } catch (Throwable) {
+            Log::warning('Password reset request could not be processed.');
         }
 
         return (new RedirectResponse('/forgot-password'))->setSession(app(Store::class))
@@ -49,11 +48,13 @@ final class PasswordRecoveryController extends Controller
     public function reset(ResetAccountPassword $request): RedirectResponse
     {
         try {
-            $status = Password::reset($request->safe()->only(['email', 'password', 'password_confirmation', 'token']),
-                function (User $user, #[\SensitiveParameter] string $password): void {
-                    $user->forceFill(['password' => $password, 'remember_token' => Str::random(60)])->save();
-                    event(new PasswordReset($user));
-                });
+            $status = Cache::lock($this->lockKey($request->validated('email')), 30)->block(2, static fn () => DB::transaction(
+                static fn () => Password::reset($request->safe()->only(['email', 'password', 'password_confirmation', 'token']),
+                    function (User $user, #[\SensitiveParameter] string $password): void {
+                        $user->forceFill(['password' => $password, 'remember_token' => Str::random(60)])->save();
+                        DB::afterCommit(static fn () => event(new PasswordReset($user)));
+                    }),
+            ));
         } catch (Throwable) {
             Log::warning('Password reset operation failed.');
             $status = Password::INVALID_TOKEN;
@@ -67,6 +68,13 @@ final class PasswordRecoveryController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login')->with('status', 'Your password was reset. Sign in with your new password.');
+        $request->session()->flash('status', 'Your password was reset. Sign in with your new password.');
+
+        return new RedirectResponse('/login');
+    }
+
+    private function lockKey(string $email): string
+    {
+        return 'password-recovery:'.hash('sha256', $email);
     }
 }

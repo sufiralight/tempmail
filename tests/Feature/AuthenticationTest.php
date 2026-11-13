@@ -4,11 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
@@ -155,5 +157,50 @@ class AuthenticationTest extends TestCase
         $this->post('/reset-password', $input)->assertRedirect('/login');
         $this->assertTrue(Hash::check($input['password'], $user->fresh()->password));
         $this->post('/reset-password', $input)->assertSessionHasErrors('email')->assertSessionMissing('_old_input.token');
+    }
+
+    public function test_expired_reset_token_and_common_password_cannot_change_the_account(): void
+    {
+        $user = User::factory()->create();
+        $token = Password::createToken($user);
+        $payload = ['email' => $user->email, 'token' => $token, 'password' => 'password1234', 'password_confirmation' => 'password1234'];
+        $this->post('/reset-password', $payload)->assertSessionHasErrors('password')->assertSessionMissing('_old_input.password');
+        $this->travel(61)->minutes();
+        $payload['password'] = $payload['password_confirmation'] = 'Fixture autumn river 39!';
+        $this->post('/reset-password', $payload)->assertSessionHasErrors('email');
+        $this->assertSame($user->password, $user->fresh()->password);
+    }
+
+    public function test_verification_requires_signed_unexpired_link_for_the_current_account(): void
+    {
+        $user = User::factory()->unverified()->create();
+        $parameters = ['id' => $user->id, 'hash' => sha1($user->email)];
+        $link = URL::temporarySignedRoute('verification.verify', now()->addHour(), $parameters, absolute: false);
+        $expired = URL::temporarySignedRoute('verification.verify', now()->subMinute(), $parameters, absolute: false);
+        $this->get($link)->assertRedirect('/login');
+        $this->actingAs(User::factory()->unverified()->create())->get($link)->assertForbidden();
+        $this->actingAs($user)->get($expired)->assertForbidden();
+        $this->get($link.'&tampered=1')->assertForbidden();
+        $this->get('/email/verify')->assertOk();
+        $this->assertFalse($user->fresh()->hasVerifiedEmail());
+        $this->get($link)->assertRedirect('/dashboard');
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+        $this->get($link)->assertRedirect('/dashboard');
+    }
+
+    public function test_verification_resend_is_throttled_and_admin_login_remains_available(): void
+    {
+        $admin = User::factory()->unverified()->create();
+        $admin->forceFill(['is_super_admin' => true])->save();
+        config(['mail.default' => 'smtp', 'app.url' => 'https://mail.example.test']);
+        Notification::fake();
+        $this->actingAs($admin)->get('/dashboard')->assertOk();
+        $this->get('/admin')->assertRedirect('/email/verify');
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            $this->post('/email/verification-notification')->assertRedirect('/email/verify');
+        }
+        $this->post('/email/verification-notification')->assertStatus(429);
+        Notification::assertSentToTimes($admin, VerifyEmail::class, 3);
+        Notification::assertSentTo($admin, VerifyEmail::class, fn (VerifyEmail $mail) => str_starts_with($mail->toMail($admin)->actionUrl, 'https://mail.example.test/email/verify/'));
     }
 }

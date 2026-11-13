@@ -41,6 +41,7 @@
         --theme-foreground: var(--color-zinc-900);
         --theme-border: var(--color-zinc-200);
         --theme-primary: var(--color-zinc-900);
+        --theme-progress: var(--color-zinc-900);
         --theme-on-primary: var(--color-white);
         --theme-secondary: var(--color-zinc-500);
         --theme-muted: var(--color-zinc-100);
@@ -56,6 +57,7 @@
             --theme-foreground: var(--color-zinc-50);
             --theme-border: var(--color-zinc-700);
             --theme-primary: var(--color-zinc-50);
+            --theme-progress: var(--color-zinc-300);
             --theme-on-primary: var(--color-zinc-900);
             --theme-secondary: var(--color-zinc-400);
             --theme-muted: var(--color-zinc-800);
@@ -92,6 +94,25 @@
 }
 
 @layer components {
+    .ui-page-progress {
+        @apply pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px];
+        transition: opacity var(--ui-duration) ease-out;
+    }
+    .ui-page-progress[data-state=fading] { opacity: 0; }
+    .ui-page-progress-fill {
+        @apply h-full origin-left;
+        background: var(--theme-progress);
+        transform: scaleX(0);
+    }
+    .ui-page-progress[data-state=complete] .ui-page-progress-fill {
+        transition: transform var(--ui-duration) var(--ease-ui);
+    }
+    .ui-password-strength { @apply grid grid-cols-4 gap-1; }
+    .ui-password-strength span {
+        @apply h-1.5 rounded-full border border-control-border bg-muted;
+        transition: background-color var(--ui-duration) ease-out;
+    }
+    .ui-password-strength span[data-filled=true] { @apply border-primary bg-primary; }
     .ui-container { @apply mx-auto w-full max-w-6xl px-gutter sm:px-8; }
     .ui-display-title { @apply text-4xl font-semibold tracking-tight sm:text-6xl; }
     .ui-page-title { @apply text-3xl font-semibold tracking-tight sm:text-4xl; }

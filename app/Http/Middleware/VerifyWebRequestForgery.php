@@ -8,7 +8,7 @@ final class VerifyWebRequestForgery extends PreventRequestForgery
 {
     protected function hasValidOrigin($request): bool
     {
-        return ! $request->is('install', 'install/*', 'login', 'register', 'logout', 'forgot-password', 'reset-password')
+        return ! $request->is('install', 'install/*', 'login', 'register', 'logout', 'forgot-password', 'reset-password', 'email/verification-notification')
             && parent::hasValidOrigin($request);
     }
 }
