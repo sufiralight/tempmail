@@ -8,16 +8,49 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
+    public function test_media_upload_ownership_picker_and_branding_references(): void
+    {
+        Storage::fake('media');
+        $owner = User::factory()->create();
+        $owner->forceFill(['is_super_admin' => true])->save();
+        $other = User::factory()->create();
+        $this->get('/media-library')->assertRedirect('/login');
+        $this->actingAs($owner)->get('/media-library')->assertOk()->assertSee('Media Library');
+        $this->postJson('/media-library', ['image' => UploadedFile::fake()->createWithContent('bad.svg', '<svg/>')])
+            ->assertUnprocessable();
+        $response = $this->postJson('/media-library', ['image' => UploadedFile::fake()->image('fixture.png', 12, 14)])
+            ->assertCreated();
+        $id = $response->json('id');
+        $this->get('/media-library/picker')->assertOk()->assertHeader('X-Frame-Options', 'SAMEORIGIN')->assertSee('fixture.png');
+        $this->get("/media-library/{$id}/file?preview=1")->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->patch("/media-library/{$id}", ['title' => 'New title', 'alt_text' => 'Sample'])->assertRedirect();
+        $this->actingAs($other)->get("/media-library/{$id}/file")->assertForbidden();
+        $this->get('/media-library/picker')->assertOk()->assertDontSee('fixture.png');
+        $this->get('/admin/settings/branding')->assertForbidden();
+        $this->actingAs($owner)->get('/admin/settings/branding')->assertOk()->assertSee('Choose image');
+        $branding = ['logo' => $id, 'dark-logo' => $id, 'favicon' => null, 'social' => null];
+        $this->patch('/admin/settings/branding', $branding)->assertRedirect();
+        $this->get('/dashboard')->assertOk()->assertSee('/branding/logo')->assertSee('/branding/dark-logo');
+        $this->get('/branding/logo')->assertOk();
+        $this->delete("/media-library/{$id}")->assertSessionHasErrors('media');
+        $this->patch('/admin/settings/branding', array_fill_keys(array_keys($branding), null))->assertRedirect();
+        $this->post('/media-library/bulk-delete', ['items' => [$id]])->assertRedirect();
+        $this->assertDatabaseMissing('media', ['id' => $id]);
+        $this->assertDatabaseHas('administrative_audits', ['action' => 'media.bulk_deleted', 'target_id' => $id]);
+    }
+
     public function test_profile_security_preferences_and_scoped_session_revocation(): void
     {
         $password = 'Fixture current password 42';

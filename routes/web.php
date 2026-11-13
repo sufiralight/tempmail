@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\InstallerAdminController;
 use App\Http\Controllers\InstallerController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PasswordRecoveryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceAdminController;
@@ -48,6 +50,16 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         ->middleware('throttle:verification-resend')->name('verification.send');
     Route::post('/logout', [AccountController::class, 'logout'])->name('logout');
     Route::view('/dashboard', 'workspace.dashboard')->middleware('can:dashboard.view')->name('dashboard');
+    Route::prefix('media-library')->name('media.')->controller(MediaController::class)->group(function (): void {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->middleware('throttle:20,1')->name('store');
+        Route::get('/picker', 'index')->name('picker');
+        Route::post('/bulk-delete', 'bulkDelete')->middleware('throttle:10,1')->name('bulk-delete');
+        Route::get('/{media}/file', 'file')->whereNumber('media')->name('file');
+        Route::get('/{media}', 'show')->whereNumber('media')->name('show');
+        Route::patch('/{media}', 'update')->whereNumber('media')->name('update');
+        Route::delete('/{media}', 'destroy')->whereNumber('media')->middleware('throttle:10,1')->name('destroy');
+    });
     Route::prefix('profile')->name('profile.')->group(function (): void {
         Route::get('/', [ProfileController::class, 'show'])->name('show');
         Route::get('/security', [ProfileController::class, 'security'])->name('security');
@@ -62,6 +74,8 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         });
     });
     Route::prefix('admin')->middleware(['can:admin.access', 'verified'])->group(function (): void {
+        Route::get('/settings/branding', [BrandingController::class, 'show'])->middleware('can:settings.manage')->name('admin.branding');
+        Route::patch('/settings/branding', [BrandingController::class, 'update'])->middleware(['can:settings.manage', 'throttle:10,1'])->name('admin.branding.update');
         Route::get('/', [WorkspaceAdminController::class, 'overview'])->name('admin');
         Route::get('/users', [WorkspaceAdminController::class, 'users'])->middleware('can:users.view')->name('admin.users');
         Route::get('/users/{user}', [WorkspaceAdminController::class, 'user'])->middleware('can:users.view')->name('admin.users.show');
@@ -74,6 +88,9 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         Route::get('/audit-logs', [WorkspaceAdminController::class, 'audits'])->middleware('can:audit.view')->name('admin.audits');
     });
 });
+
+Route::get('/branding/{slot}', [BrandingController::class, 'asset'])
+    ->whereIn('slot', BrandingController::SLOTS)->name('branding.asset');
 
 Route::get('/', function () {
     return view('welcome');

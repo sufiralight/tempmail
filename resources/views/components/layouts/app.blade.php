@@ -7,6 +7,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ? $title.' · ' : '' }}{{ config('app.name') }}</title>
+    @if(isset($workspaceBranding['favicon']))
+        <link rel="icon" href="{{ route('branding.asset', ['slot' => 'favicon']) }}">
+    @endif
+    @if(isset($workspaceBranding['social']))
+        <meta property="og:image" content="{{ route('branding.asset', ['slot' => 'social']) }}">
+    @endif
     <x-layouts.theme-init />
     @if ($hasAssets)
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -19,7 +25,8 @@
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-50 focus:bg-surface focus:p-2">Skip to content</a>
     <header class="border-b border-border bg-surface">
         <div class="ui-container flex min-h-16 flex-wrap items-center justify-between gap-3 py-2">
-            <x-ui.logo :href="url('/')" :src="$logoSrc" />
+            <x-ui.logo :href="url('/')" :src="$logoSrc ?? (isset($workspaceBranding['logo']) ? route('branding.asset', ['slot' => 'logo']) : null)"
+                :dark-src="$logoSrc === null && isset($workspaceBranding['dark-logo']) ? route('branding.asset', ['slot' => 'dark-logo']) : null" />
             <div class="flex flex-wrap items-center gap-2">
                 @isset($navigation)
                     <nav aria-label="Main navigation" class="flex flex-wrap items-center gap-2">{{ $navigation }}</nav>

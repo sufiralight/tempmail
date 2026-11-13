@@ -1,5 +1,6 @@
 import Alpine from 'alpinejs';
 import './ui.js';
+import './media.js';
 import './password-strength.js';
 import {mountPageProgress} from './page-progress.js';
 

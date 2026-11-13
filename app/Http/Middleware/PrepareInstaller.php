@@ -20,7 +20,11 @@ final class PrepareInstaller
         $installer = $request->is('install', 'install/*');
         $home = $request->is('/') && $request->isMethodSafe();
 
-        if ($request->is('setup-complete', 'login', 'register', 'logout', 'forgot-password', 'reset-password', 'reset-password/*', 'email/verify', 'email/verify/*', 'email/verification-notification', 'dashboard', 'admin', 'admin/*', 'profile', 'profile/*')) {
+        if ($request->is('branding/*') && (! $this->access->installed() || ! config('app.key') || ! is_file(app()->environmentFilePath()))) {
+            return $this->private(new Response('Branding is unavailable.', 404));
+        }
+
+        if ($request->is('setup-complete', 'login', 'register', 'logout', 'forgot-password', 'reset-password', 'reset-password/*', 'email/verify', 'email/verify/*', 'email/verification-notification', 'dashboard', 'admin', 'admin/*', 'profile', 'profile/*', 'media-library', 'media-library/*')) {
             if (! $this->access->installed() || ! config('app.key') || ! is_file(app()->environmentFilePath())) {
                 if ($request->isMethodSafe() && $this->access->forRequest($request) !== null) {
                     return $this->private(new RedirectResponse('/install'));
@@ -29,7 +33,12 @@ final class PrepareInstaller
                 return $this->private(new Response('Workspace access is unavailable until installation is complete.', 404));
             }
 
-            return $this->private($next($request));
+            $response = $this->private($next($request));
+            if ($request->routeIs('media.picker')) {
+                $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+            }
+
+            return $response;
         }
 
         if (! $installer && ! $home) {

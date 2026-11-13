@@ -3,15 +3,19 @@
 namespace App\Providers;
 
 use App\Auth\WorkspaceRole;
+use App\Installation\InstallationAccess;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 
@@ -31,6 +35,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         DevCommands::except('queue');
+
+        View::composer('components.layouts.app', static function (\Illuminate\View\View $view): void {
+            if (! request()->is('install', 'install/*') && app(InstallationAccess::class)->installed()
+                && Schema::hasTable('branding_assets')) {
+                $view->with('workspaceBranding', DB::table('branding_assets')->pluck('media_id', 'slot')->all());
+            }
+        });
 
         foreach (WorkspaceRole::SuperAdmin->permissions() as $permission) {
             Gate::define($permission, static fn (User $user): bool => $user->is_active === true
