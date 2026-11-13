@@ -7,6 +7,7 @@ use App\Http\Controllers\InstallerAdminController;
 use App\Http\Controllers\InstallerController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PasswordRecoveryController;
+use App\Http\Controllers\ProfileAvatarController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceAdminController;
 use App\Http\Middleware\BeginDatabaseVerification;
@@ -75,6 +76,12 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
     });
     Route::prefix('profile')->name('profile.')->group(function (): void {
         Route::get('/', [ProfileController::class, 'show'])->name('show');
+        Route::get('/avatar/{mediaId}', [ProfileAvatarController::class, 'show'])->whereNumber('mediaId')->name('avatar.show');
+        Route::controller(ProfileAvatarController::class)->middleware('throttle:10,1,avatar:')->group(function (): void {
+            Route::post('/avatar', 'upload')->name('avatar.upload');
+            Route::patch('/avatar', 'update')->name('avatar.update');
+            Route::delete('/avatar', 'destroy')->name('avatar.destroy');
+        });
         Route::get('/security', [ProfileController::class, 'security'])->name('security');
         Route::get('/sessions', [ProfileController::class, 'sessions'])->name('sessions');
         Route::get('/preferences', [ProfileController::class, 'preferences'])->name('preferences');
@@ -94,6 +101,8 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         Route::patch('/settings/branding', [BrandingController::class, 'update'])->middleware(['can:settings.manage', 'throttle:10,1'])->name('admin.branding.update');
         Route::get('/', [WorkspaceAdminController::class, 'overview'])->name('admin');
         Route::get('/users', [WorkspaceAdminController::class, 'users'])->middleware('can:users.view')->name('admin.users');
+        Route::get('/users/{user}/avatar/{mediaId}', [ProfileAvatarController::class, 'adminShow'])
+            ->whereNumber('mediaId')->middleware('can:users.view')->name('admin.users.avatar');
         Route::get('/users/{user}', [WorkspaceAdminController::class, 'user'])->middleware('can:users.view')->name('admin.users.show');
         Route::patch('/users/{user}', [WorkspaceAdminController::class, 'updateUser'])
             ->middleware(['can:manage,user', 'throttle:10,1'])->name('admin.users.update');

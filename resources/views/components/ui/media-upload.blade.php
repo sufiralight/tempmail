@@ -1,8 +1,9 @@
-@props(['picker' => false])
+@props(['picker' => false, 'avatar' => false])
 <form method="post" action="{{ route('media.store') }}" enctype="multipart/form-data" data-page-progress="off"
     x-data="mediaUpload" @submit.prevent="upload($el)" @dragover.prevent="dragging = true" @dragleave="dragging = false"
     @drop.prevent="drop($event, $refs.files)" :class="{ 'ring-2 ring-focus': dragging }" class="grid gap-3 rounded-ui border border-border p-4">
     @csrf
+    @if($avatar)<input type="hidden" name="avatar" value="1">@endif
     @if($picker)<input type="hidden" name="picker" value="1">@endif
     <x-ui.input type="file" name="image" label="Choose or drop images" accept="image/jpeg,image/png,image/webp,image/gif" x-ref="files" ::disabled="busy" multiple required />
     <noscript><p class="ui-help">Select one image at a time when JavaScript is disabled.</p></noscript>

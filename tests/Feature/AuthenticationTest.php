@@ -138,6 +138,79 @@ class AuthenticationTest extends TestCase
         $this->assertDatabaseMissing('media', ['id' => $id]);
     }
 
+    public function test_profile_avatar_upload_selection_visibility_and_removal(): void
+    {
+        Storage::fake('media');
+        $owner = User::factory()->create(['name' => 'Éva Şen']);
+        $other = User::factory()->create();
+        $admin = User::factory()->create(['is_super_admin' => true]);
+
+        $this->get('/profile/avatar/1')->assertRedirect('/login');
+        $this->actingAs($owner)->get('/profile')->assertOk()->assertSee('ÉŞ')->assertSee('Initials avatar');
+        $this->postJson('/profile/avatar', ['image' => UploadedFile::fake()->createWithContent('bad.svg', '<svg/>')])
+            ->assertUnprocessable()->assertJsonValidationErrors('image');
+        $this->postJson('/profile/avatar', ['image' => UploadedFile::fake()->createWithContent('bad.png', 'text')])
+            ->assertUnprocessable()->assertJsonValidationErrors('image');
+        $this->postJson('/profile/avatar', ['image' => UploadedFile::fake()->image('large.png')->size(config('media.max_kib') + 1)])
+            ->assertUnprocessable()->assertJsonValidationErrors('image');
+        $this->post('/profile/avatar', ['image' => UploadedFile::fake()->image('photo.png')])
+            ->assertRedirect('/profile')->assertSessionHasNoErrors();
+
+        $first = $owner->fresh()->avatar_media_id;
+        $this->assertNotNull($first);
+        $url = "/profile/avatar/{$first}";
+        $this->get('/profile')->assertOk()->assertSee($url)->assertSee('Remove photo');
+        $this->get('/dashboard')->assertOk()->assertSee($url);
+        $this->get($url)->assertOk()->assertHeader('Content-Type', 'image/png');
+
+        $this->actingAs($other)->get($url)->assertNotFound();
+        $adminUrl = "/admin/users/{$owner->id}/avatar/{$first}";
+        $this->get($adminUrl)->assertForbidden();
+        $this->patchJson('/profile/avatar', ['avatar_media_id' => $first])->assertUnprocessable();
+        $this->actingAs($admin)->get('/admin/users')->assertOk()->assertSee($adminUrl);
+        $this->get("/admin/users/{$owner->id}")->assertOk()->assertSee($adminUrl);
+        $this->get($adminUrl)->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->get("/admin/users/{$owner->id}/avatar/".($first + 1))->assertNotFound();
+
+        $this->actingAs($owner)->deleteJson("/media/{$first}")->assertUnprocessable()->assertJsonValidationErrors('media');
+        $this->postJson('/media/bulk-delete', ['items' => [$first]])->assertUnprocessable();
+        $second = $this->postJson('/media', ['image' => UploadedFile::fake()->image('replacement.png')])->assertCreated()->json('id');
+        $this->patch('/profile/avatar', ['avatar_media_id' => $second])->assertRedirect('/profile')->assertSessionHasNoErrors();
+        $this->assertEquals($second, $owner->fresh()->avatar_media_id);
+        $this->get($url)->assertNotFound();
+        $this->get("/media/{$first}/file")->assertOk();
+        $this->delete("/media/{$first}")->assertRedirect('/media');
+        $this->patchJson('/profile/avatar', ['avatar_media_id' => $first])->assertUnprocessable();
+
+        $this->delete('/profile/avatar')->assertRedirect('/profile')->assertSessionHasNoErrors();
+        $this->assertNull($owner->fresh()->avatar_media_id);
+        $this->get('/profile')->assertOk()->assertSee('Initials avatar');
+        $this->get("/media/{$second}/file")->assertOk();
+    }
+
+    public function test_avatar_write_requires_csrf_and_preserves_the_previous_photo_on_storage_failure(): void
+    {
+        $disk = Storage::fake('media');
+        $owner = User::factory()->create();
+        $this->actingAs($owner);
+        $this->post('/profile/avatar', ['image' => UploadedFile::fake()->image('current.png')])->assertRedirect('/profile');
+        $id = $owner->fresh()->avatar_media_id;
+
+        $this->app->instance('env', 'local');
+        $this->withSession(['_token' => 'current-token']);
+        $this->deleteJson('/profile/avatar', ['_token' => 'stale-token'])->assertStatus(419);
+
+        $unavailable = \Mockery::mock(FilesystemAdapter::class);
+        $unavailable->shouldReceive('put')->once()->andReturnFalse();
+        $unavailable->shouldReceive('delete')->once()->andReturnTrue();
+        Storage::set('media', $unavailable);
+        $this->postJson('/profile/avatar', ['_token' => 'current-token', 'image' => UploadedFile::fake()->image('failed.png')])
+            ->assertStatus(507);
+        $this->assertEquals($id, $owner->fresh()->avatar_media_id);
+        Storage::set('media', $disk);
+        $this->get("/profile/avatar/{$id}")->assertOk();
+    }
+
     public function test_workspace_shell_groups_navigation_by_permissions_and_verification(): void
     {
         $member = User::factory()->unverified()->create();

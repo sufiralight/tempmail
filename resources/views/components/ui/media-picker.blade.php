@@ -1,4 +1,4 @@
-@props(['name', 'label', 'value' => null, 'previewUrl' => null])
+@props(['name', 'label', 'value' => null, 'previewUrl' => null, 'avatar' => false])
 <div x-data="mediaPicker" class="grid gap-2">
     <p class="ui-label">{{ $label }}</p>
     <input type="hidden" name="{{ $name }}" value="{{ $value }}" x-ref="selection">
@@ -8,7 +8,7 @@
         <x-ui.modal :title="'Choose image for '.$label">
             <x-slot:trigger><x-ui.button variant="outline" @click="opened = true">Choose image</x-ui.button></x-slot:trigger>
             <template x-if="opened">
-                <iframe title="Media Library image picker" src="{{ route('media.picker', absolute: false) }}"
+                <iframe title="Media Library image picker" src="{{ route('media.picker', $avatar ? ['avatar' => 1] : [], absolute: false) }}"
                     class="h-[55dvh] w-full rounded-ui border border-border"></iframe>
             </template>
         </x-ui.modal>

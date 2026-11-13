@@ -23,7 +23,15 @@
             <x-slot:head><tr><th scope="col">Account</th><th scope="col">Role</th><th scope="col">Status</th></tr></x-slot:head>
             @foreach($users as $account)
                 <tr>
-                    <td><a class="font-medium underline underline-offset-4" href="{{ route('admin.users.show', $account, absolute: false) }}">{{ $account->name }}</a><div class="ui-help break-all">{{ $account->email }}</div></td>
+                    <td>
+                        <div class="flex items-center gap-2">
+                            <x-ui.avatar :name="$account->name" :src="$account->avatarUrl(admin: true)" size="sm" decorative />
+                            <div class="min-w-0">
+                                <a class="font-medium underline underline-offset-4" href="{{ route('admin.users.show', $account, absolute: false) }}">{{ $account->name }}</a>
+                                <div class="ui-help break-all">{{ $account->email }}</div>
+                            </div>
+                        </div>
+                    </td>
                     <td>{{ $account->workspaceRole()->label() }}</td>
                     <td><x-ui.badge>{{ $account->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
                 </tr>

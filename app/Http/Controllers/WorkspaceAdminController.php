@@ -26,7 +26,7 @@ final class WorkspaceAdminController extends Controller
     public function users(Request $request): View
     {
         $filters = $request->validate(['q' => 'nullable|string|max:100', 'role' => 'nullable|in:user,admin,super_admin', 'status' => 'nullable|in:active,inactive']);
-        $query = User::query()->select('id', 'name', 'email', 'role', 'is_super_admin', 'is_active', 'email_verified_at');
+        $query = User::query()->select('id', 'name', 'email', 'role', 'is_super_admin', 'is_active', 'email_verified_at', 'avatar_media_id');
         if (! empty($filters['q'])) {
             $pattern = '%'.$filters['q'].'%';
             $query->where(fn ($query) => $query->whereLike('name', $pattern)->orWhereLike('email', $pattern));

@@ -36,6 +36,17 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    public function avatarUrl(bool $admin = false): ?string
+    {
+        if ($this->avatar_media_id === null) {
+            return null;
+        }
+
+        return $admin
+            ? route('admin.users.avatar', ['user' => $this, 'mediaId' => $this->avatar_media_id], absolute: false)
+            : route('profile.avatar.show', ['mediaId' => $this->avatar_media_id], absolute: false);
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->is_super_admin === true;

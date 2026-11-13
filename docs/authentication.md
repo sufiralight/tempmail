@@ -36,3 +36,9 @@ Appearance, English interface preference and an IANA timezone are stored separat
 Security notices use the configured direct mail transport. Profile and security events reuse the shared audit writer and contain only event names, actor and target IDs and, for revocations, the count. The profile activity query shows only the current account's events. The administrative audit viewer retains its existing access controls.
 
 Apply the additive account preferences and session migration during the controlled release before enabling authenticated routes on existing deployments.
+
+## Profile photos
+
+Upload a photo or choose an owned image from the Media Library on Profile. The account stores a nullable reference to an active image with a generated PNG preview. Replacing or removing the photo leaves the previous image in the library. The signed-in owner and verified administrators with users.view can read the assigned preview through their respective routes. Other media remains subject to its existing policy.
+
+Back up the database and private media and apply the additive avatar migration with `php artisan migrate --force` during the controlled deployment before reopening authenticated routes. Existing accounts start with initials.

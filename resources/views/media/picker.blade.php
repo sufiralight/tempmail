@@ -2,7 +2,7 @@
     <div x-data="{ choice: null }" class="grid gap-4">
         @if(session('status'))<x-ui.alert variant="success" announce>{{ session('status') }}</x-ui.alert>@endif
         @if($errors->any())<x-ui.alert variant="error" announce>{{ $errors->first() }}</x-ui.alert>@endif
-        <x-ui.media-upload picker />
+        <x-ui.media-upload picker :avatar="!empty($filters['avatar'])" />
         <x-media.filters :$filters picker />
         @if($items->isEmpty())<x-ui.empty-state title="No matching images" />@endif
         <fieldset class="grid grid-cols-2 gap-2">

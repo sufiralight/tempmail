@@ -1,5 +1,6 @@
 @props(['filters', 'picker' => false, 'admin' => false, 'trash' => false])
 <form method="get" action="{{ route($picker ? 'media.picker' : ($admin ? 'admin.media.index' : ($trash ? 'media.trash' : 'media.index'))) }}" class="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+    @if($picker && !empty($filters['avatar']))<input type="hidden" name="avatar" value="1">@endif
     <x-ui.input name="q" label="Search images" type="search" :value="$filters['q'] ?? null" maxlength="100" />
     <x-ui.select name="type" label="File type">
         <option value="">All types</option>

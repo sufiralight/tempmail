@@ -1,5 +1,6 @@
 <x-layouts.workspace title="Account details">
     <x-ui.card :title="$account->name">
+        <x-ui.avatar :name="$account->name" :src="$account->avatarUrl(admin: true)" size="lg" decorative class="mb-3" />
         <dl class="grid gap-2 text-sm">
             <div class="break-all"><dt class="ui-help">Email</dt><dd>{{ $account->email }}</dd></div>
             <div><dt class="ui-help">Role and status</dt><dd>{{ $account->workspaceRole()->label() }} · {{ $account->is_active ? 'Active' : 'Inactive' }}</dd></div>

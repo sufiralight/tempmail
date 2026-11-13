@@ -20,7 +20,13 @@ final class MediaController extends Controller
         $admin = $request->routeIs('admin.media.index');
         $trash = $request->routeIs('media.trash');
         $picker = $request->routeIs('media.picker');
+        if ($picker && $request->boolean('avatar')) {
+            $filters['avatar'] = 1;
+        }
         $query = $trash ? Media::onlyTrashed() : Media::query();
+        if (isset($filters['avatar'])) {
+            $query->where('thumbnail', true);
+        }
         if (! $admin) {
             $query->where('user_id', $request->user()->id);
         }
@@ -80,7 +86,7 @@ final class MediaController extends Controller
         $media = $storage->store($request->user(), $request->file('image'));
 
         return $request->expectsJson() ? response()->json(['id' => $media->id], 201)
-            : redirect()->route($request->boolean('picker') ? 'media.picker' : 'media.index')->with('status', 'Image uploaded.');
+            : redirect()->route($request->boolean('picker') ? 'media.picker' : 'media.index', $request->boolean('picker') && $request->boolean('avatar') ? ['avatar' => 1] : [])->with('status', 'Image uploaded.');
     }
 
     public function update(Request $request, Media $media)

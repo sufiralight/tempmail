@@ -154,7 +154,8 @@ final class MediaStorage
                     if ($item === null) {
                         return ! Media::withTrashed()->whereKey($id)->exists();
                     }
-                    if ($item->purge_requested_at === null || DB::table('branding_assets')->where('media_id', $id)->exists()) {
+                    if ($item->purge_requested_at === null || DB::table('branding_assets')->where('media_id', $id)->exists()
+                        || User::query()->where('avatar_media_id', $id)->exists()) {
                         return false;
                     }
 
@@ -199,6 +200,10 @@ final class MediaStorage
         }
         if (DB::table('branding_assets')->whereIn('media_id', $ids)->exists()) {
             throw ValidationException::withMessages(['media' => 'Remove the branding references before changing these images.']);
+        }
+
+        if (User::query()->whereIn('avatar_media_id', $ids)->exists()) {
+            throw ValidationException::withMessages(['media' => 'Change or remove the assigned profile photo before moving or deleting this image.']);
         }
 
         return $items;
