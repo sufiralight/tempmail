@@ -1,4 +1,5 @@
-@php($accountAppearance = auth()->user()?->appearance)
+@props(['accountAppearance' => null, 'useAccount' => true])
+@php($accountAppearance = $useAccount ? auth()->user()?->appearance : $accountAppearance)
 <script>
     (() => {
         const key = 'tempmail.theme';

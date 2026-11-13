@@ -5,10 +5,11 @@
         <p class="ui-help mt-2">Choose a database engine to configure your workspace.</p>
     </div>
 
+    <x-installation.steps :step="1" :$verified />
     @if ($verified)
         <x-ui.alert id="connection-verified" tabindex="-1" x-data x-init="$el.focus()" class="mb-4"
             variant="success" title="Database connection verified" announce>
-            <p>Continue to administrator setup before this verification expires.</p>
+            <p>Continue with the verified connection, or enter the database password again to verify edited settings.</p>
             <x-ui.button href="/install/admin" variant="outline" class="mt-2">Continue to administrator setup</x-ui.button>
         </x-ui.alert>
     @endif
@@ -35,7 +36,7 @@
             ]]);
         @endphp
         <form method="post" action="/install" class="grid gap-4"
-            x-data="{ engine: @js($initial->value), port: @js($options[$initial->value]['port']), options: @js($options) }">
+            x-data="{ engine: @js($initial->value), port: @js($fields['port'] ?? $options[$initial->value]['port']), options: @js($options) }">
             @csrf
             <x-ui.select name="engine" id="db-engine" label="Database engine" x-model="engine" x-on:change="port = options[$event.target.value].port" required>
                 @foreach ($engines as $engine)
@@ -52,14 +53,14 @@
             @endif
             <fieldset class="grid gap-4" x-show="engine !== 'sqlite'" :disabled="engine === 'sqlite'" @disabled($initial->value === 'sqlite')>
             <div class="grid gap-4 sm:grid-cols-[1fr_8rem]">
-                <x-ui.input name="host" id="db-host" label="Database host" :value="$access['host']"
+                <x-ui.input name="host" id="db-host" label="Database host" :value="$fields['host'] ?? $access['host']"
                     autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="253" required />
-                <x-ui.input name="port" id="db-port" label="Database port" type="number" :value="$options[$initial->value]['port']" x-model="port"
+                <x-ui.input name="port" id="db-port" label="Database port" type="number" :value="$fields['port'] ?? $options[$initial->value]['port']" x-model="port"
                     min="1" max="65535" inputmode="numeric" required />
             </div>
-            <x-ui.input name="database" id="db-name" label="Database name" maxlength="64"
+            <x-ui.input name="database" id="db-name" label="Database name" maxlength="64" :value="$fields['database'] ?? null"
                 help="Use an empty database created for this installation." autocomplete="off" autocapitalize="off" required />
-            <x-ui.input name="username" id="db-username" label="Database username" maxlength="80"
+            <x-ui.input name="username" id="db-username" label="Database username" maxlength="80" :value="$fields['username'] ?? null"
                 autocomplete="off" autocapitalize="off" required />
             <x-ui.password-field name="database_password" id="db-password" label="Database password" maxlength="512"
                 autocomplete="off" :help="$access['local'] ? 'Leave blank if the local database account has no password.' : null"

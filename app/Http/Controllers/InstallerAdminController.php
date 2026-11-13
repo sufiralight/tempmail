@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\FinishInstallation;
 use App\Installation\InstallerFinalizer;
+use App\Installation\InstallerState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,9 +12,9 @@ use Illuminate\Support\Facades\Route;
 
 final class InstallerAdminController extends Controller
 {
-    public function show(): View
+    public function show(InstallerState $state): View
     {
-        return view('installation.admin');
+        return view('installation.admin', ['reversible' => ! $state->pendingFinalization()]);
     }
 
     public function finish(FinishInstallation $request, InstallerFinalizer $installer): RedirectResponse

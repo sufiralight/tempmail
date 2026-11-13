@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\SafeErrors;
 use App\Installation\InstallationAccess;
 use App\Installation\InstallerState;
 use Closure;
@@ -53,7 +54,8 @@ final class PrepareInstaller
             }
 
             if (! config('app.key') || ($this->access->installed() && ! is_file(app()->environmentFilePath()))) {
-                return $this->private(new Response('Configuration is unavailable. The deployment operator must restore the original environment or explicitly enable first installation.', 503));
+                return SafeErrors::respond($request, 503, 'Configuration unavailable',
+                    'The deployment operator must restore the original environment or explicitly enable first installation.');
             }
 
             return $next($request);
@@ -64,7 +66,7 @@ final class PrepareInstaller
                 Log::notice('Installer submission denied by the operator gate.');
             }
 
-            return $this->private(new Response('Installation is unavailable.', 404));
+            return SafeErrors::respond($request, 404, 'Installation unavailable', 'Installation is unavailable.');
         }
 
         if ($request->getRealMethod() === 'POST' && $request->query->count() !== 0) {

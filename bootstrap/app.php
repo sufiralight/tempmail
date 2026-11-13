@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Middleware\PrepareInstaller;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyWebRequestForgery;
+use App\Http\SafeErrors;
 use App\Installation\InstallationRecoveryRequired;
 use App\Installation\InstallerEnvironment;
 use Illuminate\Foundation\Application;
@@ -10,7 +12,6 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 $app = Application::configure(basePath: dirname(__DIR__))
@@ -21,16 +22,17 @@ $app = Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(PrepareInstaller::class);
+        $middleware->prepend(SecurityHeaders::class);
         $middleware->redirectUsersTo('/dashboard');
         $middleware->trimStrings(except: ['database_password']);
         $middleware->web(replace: [PreventRequestForgery::class => VerifyWebRequestForgery::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->dontFlash(['database_password', 'token', 'current_password']);
-        $exceptions->dontReportWhen(fn () => request()->is('install', 'install/*'));
+        $exceptions->report(static fn (Throwable $exception) => app()->runningInConsole() ? null : SafeErrors::report($exception));
         $exceptions->render(function (Throwable $exception, Request $request) {
             if (! $request->is('install', 'install/*')) {
-                return null;
+                return SafeErrors::render($exception, $request);
             }
 
             $status = $exception instanceof HttpExceptionInterface ? $exception->getStatusCode() : 500;
@@ -42,11 +44,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
                 default => ['Installation unavailable', 'Try again shortly. If the problem persists, ask the deployment operator to check private installation storage and configuration.'],
             };
 
-            return new Response(view('installation.notice', compact('title', 'message')), $status, [
-                'Cache-Control' => 'no-store, private',
-                'Referrer-Policy' => 'no-referrer',
-                'X-Frame-Options' => 'DENY',
-            ]);
+            return SafeErrors::respond($request, $status, $title, $message,
+                $exception instanceof HttpExceptionInterface ? $exception->getHeaders() : [], installer: true);
         });
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),

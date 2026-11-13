@@ -71,3 +71,7 @@ If .env is missing on a completed deployment, keep the installed marker and rest
 ## Authentication handoff
 
 /setup-complete forwards to /login with a success message using the normal application session. The installer does not authenticate the administrator. See [Authentication](authentication.md) for session, recovery, and authorization details.
+
+## Reversible navigation
+
+The administrator step links back to the database form until finalization begins. The verified lease supplies the engine, host, port, database and username. The password field stays empty. Continue with the unchanged verified connection or submit the edited settings with the database password. Every accepted verification attempt clears the previous result before validating input. Refresh and browser history use the same protected GET routes. Finalization retains its filesystem lock, engine-specific locking and checkpoints.

@@ -18,20 +18,22 @@ final class InstallerController extends Controller
 
     public function show(Request $request): View
     {
-        $verified = $this->state->isVerified($request);
+        $settings = $this->state->verifiedDatabase($request);
+        $verified = $settings !== null;
         $pendingFinalization = $this->state->pendingFinalization();
         if ($pendingFinalization && ! $verified) {
             throw new InstallationRecoveryRequired;
         }
 
         $access = $request->attributes->get('installer.access');
-        $initial = $access['engine'] ?? $request->session()->get('installer.engine', 'mysql');
+        $initial = $access['engine'] ?? $settings['engine'] ?? $request->session()->get('installer.engine', 'mysql');
 
         return view('installation.database', [
             'access' => $access,
             'engines' => DatabaseEngine::cases(),
             'initial' => DatabaseEngine::tryFrom($initial) ?? DatabaseEngine::MySql,
             'verified' => $verified,
+            'fields' => array_intersect_key($settings ?? [], array_flip(['host', 'port', 'database', 'username'])),
             'pendingFinalization' => $pendingFinalization,
             'expired' => ! $verified && $request->session()->pull('installer.verified', false),
         ]);

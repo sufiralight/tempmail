@@ -5,6 +5,7 @@
         <p class="ui-help mt-2">Set up the first Super Admin account for your workspace.</p>
     </div>
 
+    <x-installation.steps :step="2" verified />
     @if ($errors->any())
         <x-ui.alert tabindex="-1" x-data x-init="$el.focus()" class="mb-4"
             variant="error" title="Check your account details" announce>
@@ -25,9 +26,12 @@
                 help="Use at least 12 characters." minlength="12" required />
             <x-ui.password-field name="password_confirmation" id="admin-password-confirmation" label="Confirm password"
                 autocomplete="new-password" minlength="12" required />
+            <div class="flex flex-wrap items-center justify-end gap-3">
+            @if($reversible)<x-ui.button href="/install" variant="outline" size="lg" icon="arrow-left" class="me-auto">Back</x-ui.button>@endif
             <x-ui.button type="submit" size="lg" busy-on-submit loading-label="Finishing workspace setup...">
                 Finish workspace setup
             </x-ui.button>
+            </div>
         </form>
     </x-ui.card>
 

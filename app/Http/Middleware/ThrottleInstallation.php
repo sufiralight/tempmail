@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\SafeErrors;
 use Closure;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Cache\Repository;
@@ -31,10 +32,8 @@ final class ThrottleInstallation
         });
 
         if ($retry > 0) {
-            return response()->view('installation.notice', [
-                'title' => 'Too many attempts',
-                'message' => 'Wait a minute before trying setup again.',
-            ], 429, ['Retry-After' => (string) $retry]);
+            return SafeErrors::respond($request, 429, 'Too many attempts',
+                'Wait a minute before trying setup again.', ['Retry-After' => (string) $retry], installer: true);
         }
 
         return $next($request);

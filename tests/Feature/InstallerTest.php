@@ -86,8 +86,10 @@ class InstallerTest extends TestCase
         $this->continueWith($page);
         $this->open()->assertDontSee('Database connection verified');
         $this->continueWith($verified);
-        $this->get('http://localhost:8000/install')->assertOk()->assertSee('Database connection verified');
-        $this->get('http://localhost:8000/install/admin')->assertOk()->assertSee('Create your administrator account');
+        $this->get('http://localhost:8000/install')->assertOk()->assertSee('Database connection verified')
+            ->assertSee('value="tempmail_fixture"', false)->assertDontSee('>Back</', false);
+        $this->get('http://localhost:8000/install/admin')->assertOk()->assertSee('Create your administrator account')
+            ->assertSee('#arrow-left')->assertSee('aria-current="step"', false);
     }
 
     public function test_invalid_inputs_never_reach_the_database_and_are_not_flashed(): void
