@@ -18,7 +18,7 @@
             ...($user->can('audit.view') ? [['admin.audits', 'Audit logs', 'info']] : []),
         ];
 
-        if ($user->can('settings.manage') && request()->routeIs('admin', 'admin.*')) {
+        if ($user->can('settings.manage')) {
             $groups['Localization'] = [['admin.languages.index', 'Languages', 'settings', 'admin.languages.*'], ['admin.fonts.index', 'Fonts', 'type', 'admin.fonts.*'], ['admin.ui-translations.index', 'UI Translations', 'type', 'admin.ui-translations.*']];
         }
 

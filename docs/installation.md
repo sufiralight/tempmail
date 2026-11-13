@@ -75,3 +75,5 @@ If .env is missing on a completed deployment, keep the installed marker and rest
 ## Reversible navigation
 
 The administrator step links back to the database form until finalization begins. The verified lease supplies the engine, host, port, database and username. The password field stays empty. Continue with the unchanged verified connection or submit the edited settings with the database password. Every accepted verification attempt clears the previous result before validating input. Refresh and browser history use the same protected GET routes. Finalization retains its filesystem lock, engine-specific locking and checkpoints.
+
+The authorized installer records the first Super Admin's initial email as verified during account creation. Public registration and later email changes use signed email verification.

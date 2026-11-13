@@ -146,6 +146,7 @@ final class InstallerFinalizer
                 'email' => $administrator['email'],
                 'password' => Hash::make($administrator['password']),
                 'is_super_admin' => true,
+                'email_verified_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

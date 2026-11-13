@@ -47,3 +47,4 @@ For font catalog policy, locale typography, and deployment checks, see [Fonts Ma
 For Typography 2.0, verify an italic Roboto assignment persists and that public CSS requests only the selected style and weight.
 
 See [UI Translations](localization.md#ui-translations) for key registration, status workflow, escaping and deployment checks.
+Verify first sign-in to Admin Console for the installer-created Super Admin and require fresh verification after an email change.
