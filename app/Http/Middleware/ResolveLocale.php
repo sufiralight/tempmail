@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Administration\LanguageRegistry;
 use App\Administration\Typography;
+use App\Administration\UiTranslations;
 use App\Installation\InstallationAccess;
 use Closure;
 use Illuminate\Http\Request;
@@ -38,6 +39,9 @@ final class ResolveLocale
             $fonts = $typography->resolve($language->id, $language->code);
             $request->attributes->set('typography', ['fonts' => $fonts, 'stylesheet' => $typography->stylesheet($fonts)]);
         }
+        if ($language !== null) {
+            $request->attributes->set('ui_translations', app(UiTranslations::class)->published($language->id));
+        }
         app()->setLocale($language->code ?? config('app.locale'));
 
         try {
@@ -47,6 +51,9 @@ final class ResolveLocale
             if ($language !== null && $typography->ready()) {
                 $fonts = $typography->resolve($language->id, $language->code);
                 $request->attributes->set('typography', ['fonts' => $fonts, 'stylesheet' => $typography->stylesheet($fonts)]);
+            }
+            if ($language !== null) {
+                $request->attributes->set('ui_translations', app(UiTranslations::class)->published($language->id));
             }
             app()->setLocale($previous);
         }

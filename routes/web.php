@@ -11,6 +11,7 @@ use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PasswordRecoveryController;
 use App\Http\Controllers\ProfileAvatarController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UiTranslationController;
 use App\Http\Controllers\WorkspaceAdminController;
 use App\Http\Middleware\BeginDatabaseVerification;
 use App\Http\Middleware\RequireActiveAccount;
@@ -113,6 +114,10 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         Route::get('/settings', [WorkspaceAdminController::class, 'settings'])->middleware('can:settings.view')->name('admin.settings');
         Route::patch('/settings', [WorkspaceAdminController::class, 'updateSettings'])
             ->middleware(['can:settings.manage', 'throttle:10,1'])->name('admin.settings.update');
+        Route::prefix('ui-translations')->name('admin.ui-translations.')->middleware('can:settings.manage')->controller(UiTranslationController::class)->group(function (): void {
+            Route::get('/', 'index')->name('index');
+            Route::patch('/{language}/{key}', 'update')->whereNumber(['language', 'key'])->middleware('throttle:20,1')->name('update');
+        });
         Route::prefix('fonts')->name('admin.fonts.')->middleware('can:settings.manage')->controller(FontController::class)->group(function (): void {
             Route::get('/', 'index')->name('index');
             Route::middleware('throttle:20,1')->group(function (): void {

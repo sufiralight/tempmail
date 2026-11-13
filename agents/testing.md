@@ -9,3 +9,5 @@ Use the [browser QA matrix](../docs/testing.md#browser-qa-matrix) for changed in
 See [Localization](../docs/localization.md) for the language registry, public locale rules, integration contracts, and release gates.
 
 For font catalog policy, locale typography, and deployment checks, see [Fonts Management](../docs/localization.md#fonts-management).
+
+See [UI Translations](../docs/localization.md#ui-translations) for key registration, status workflow, escaping and deployment checks.
