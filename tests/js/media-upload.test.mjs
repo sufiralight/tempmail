@@ -101,3 +101,21 @@ test('selection tracks only rendered checkboxes and prevents restoring pending p
     assert.equal(selection.$refs.master.checked, false);
     assert.equal(selection.notice, 'Selection cleared.');
 });
+
+test('refreshes the current collection after partial success and preserves per-file results', async () => {
+    const {upload, requests} = fixture();
+    let refreshes = 0;
+    upload.refreshCollection = async () => { refreshes++; };
+    upload.$refs.files.files.length = 2;
+    const batch = upload.upload({action: '/media', token: 'fixture'});
+    requests[0].status = 201;
+    requests[0].responseText = '{"id":42}';
+    requests[0].onload();
+    requests[0].onloadend();
+    await Promise.resolve();
+    requests[1].respond(422);
+    await batch;
+    assert.equal(refreshes, 1);
+    assert.equal(upload.entries[0].id, 42);
+    assert.match(upload.entries[1].state, /validated/);
+});

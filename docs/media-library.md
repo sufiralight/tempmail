@@ -21,3 +21,5 @@ The upload form accepts multiple files and sends each image in a separate CSRF-p
 Assigned profile photos are protected from Trash and permanent deletion. Change or remove the profile photo before moving its image. Avatar assignment and media lifecycle changes share the workspace database lock.
 
 Collection thumbnails use generated PNG previews. Images without one show a placeholder in the library and are excluded from the image picker. The original remains available from authorized image details.
+
+After confirmed uploads, the browser refreshes the collection and count using the current URL. The upload dialog retains per-file results and links to uploaded items even when filters or paging exclude them. The image picker refreshes its results and offers a link to the newest images when needed. Bulk actions return to the first page with the existing search, filters, sort and view preserved.

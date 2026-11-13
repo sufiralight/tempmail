@@ -18,7 +18,7 @@ final class MediaController extends Controller
 {
     public function index(Request $request): Response
     {
-        $filters = $request->validate(['q' => 'nullable|string|max:100', 'type' => 'nullable|in:jpg,png,webp,gif', 'sort' => 'nullable|in:newest,oldest,name,name_desc,size', 'layout' => 'nullable|in:grid,list', 'per_page' => 'nullable|in:20,40,80,100']);
+        $filters = $this->filters($request);
         $admin = $request->routeIs('admin.media.index');
         $trash = $request->routeIs('media.trash');
         $picker = $request->routeIs('media.picker');
@@ -118,28 +118,36 @@ final class MediaController extends Controller
 
     public function bulkDelete(Request $request, MediaStorage $storage)
     {
+        $filters = $this->filters($request);
         $storage->moveToTrash($request->user(), $this->selection($request));
 
-        return redirect()->route('media.index')->with('status', 'Selected images moved to Trash.');
+        return redirect()->route('media.index', $filters)->with('status', 'Selected images moved to Trash.');
     }
 
     public function restore(Request $request, MediaStorage $storage): RedirectResponse
     {
+        $filters = $this->filters($request);
         $storage->restore($request->user(), $this->selection($request));
 
-        return redirect()->route('media.trash')->with('status', 'Selected images restored.');
+        return redirect()->route('media.trash', $filters)->with('status', 'Selected images restored.');
     }
 
     public function purge(Request $request, MediaStorage $storage): RedirectResponse
     {
+        $filters = $this->filters($request);
         $ids = $this->selection($request);
         $completed = $storage->permanentlyDelete($request->user(), $ids);
-        $response = redirect()->route('media.trash');
+        $response = redirect()->route('media.trash', $filters);
         if ($completed !== count($ids)) {
             return $response->withErrors(['media' => "{$completed} of ".count($ids).' images permanently deleted. Retry the remaining images from Trash.']);
         }
 
         return $response->with('status', 'Selected images permanently deleted.');
+    }
+
+    private function filters(Request $request): array
+    {
+        return $request->validate(['q' => 'nullable|string|max:100', 'type' => 'nullable|in:jpg,png,webp,gif', 'sort' => 'nullable|in:newest,oldest,name,name_desc,size', 'layout' => 'nullable|in:grid,list', 'per_page' => 'nullable|in:20,40,80,100']);
     }
 
     /** @return list<int> */

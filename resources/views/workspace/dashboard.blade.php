@@ -18,12 +18,23 @@
                     @else
                         @can('admin.access')
                             <p class="ui-help mb-1">Verify your email to access Admin Console.</p>
+                        @else
+                            <p class="ui-help mb-1">Confirm you can receive email at this address.</p>
                         @endcan
                         <a class="underline underline-offset-4" href="{{ route('verification.notice', absolute: false) }}">Verify email</a>
                     @endif
                 </dd>
             </div>
         </dl>
+        @if($user->hasVerifiedEmail())
+            <div class="mt-4 border-t border-border pt-3">
+                @can('admin.access')
+                    <x-ui.button :href="route('admin', absolute: false)" icon="shield" variant="outline">Open Admin Console</x-ui.button>
+                @else
+                    <x-ui.button :href="route('media.index', absolute: false)" icon="image" variant="outline">Manage your images</x-ui.button>
+                @endcan
+            </div>
+        @endif
     </x-ui.card>
 
 </x-layouts.workspace>

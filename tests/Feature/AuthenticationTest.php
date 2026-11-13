@@ -121,7 +121,7 @@ class AuthenticationTest extends TestCase
         $this->get('/media?per_page=40&sort=name')->assertSee('fixture-001.png');
         $this->get('/media/'.$ids[0].'/file?preview=1')->assertNotFound();
         $this->get('/media/'.$ids[0].'/file')->assertOk();
-        $this->post('/media/bulk-delete', ['items' => array_slice($ids, 0, 100)])->assertRedirect('/media');
+        $this->post('/media/bulk-delete?sort=name_desc&layout=list', ['items' => array_slice($ids, 0, 100)])->assertRedirect('/media?sort=name_desc&layout=list');
         $this->post('/media/trash/restore', ['items' => array_slice($ids, 0, 100)])->assertRedirect('/media/trash');
         $this->assertDatabaseHas('media', ['id' => $ids[0], 'deleted_at' => null]);
         $this->assertDatabaseHas('media', ['id' => $ids[1], 'deleted_at' => null]);
@@ -226,7 +226,7 @@ class AuthenticationTest extends TestCase
     {
         $member = User::factory()->unverified()->create();
         $this->actingAs($member)->get('/dashboard')->assertOk()
-            ->assertSee('Account overview')->assertSee('Open workspace navigation')
+            ->assertSee('Account overview')->assertSee('Open workspace navigation')->assertSee('Confirm you can receive email at this address.')
             ->assertSee('Account menu')->assertSee('Email verification')
             ->assertSee($member->email)->assertSee('My Profile')->assertSee('Preferences')
             ->assertDontSee('Temporary inbox')->assertDontSee('Quick actions')->assertDontSee('Admin Console');

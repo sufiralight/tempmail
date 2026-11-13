@@ -29,7 +29,7 @@ function uploadResult(xhr) {
 }
 
 Alpine.data('mediaUpload', () => ({
-    busy: false, dragging: false, finished: false, entries: [], request: null, stopped: false, notice: '',
+    busy: false, dragging: false, entries: [], request: null, stopped: false, notice: '',
 
     drop(event, input) {
         this.dragging = false;
@@ -43,7 +43,6 @@ Alpine.data('mediaUpload', () => ({
         const data = new FormData(form);
         this.entries = files.map(file => ({name: file.name, progress: null, state: 'Waiting'}));
         this.busy = true;
-        this.finished = false;
         this.stopped = false;
         try {
             for (const [index, file] of files.entries()) {
@@ -58,16 +57,42 @@ Alpine.data('mediaUpload', () => ({
                     this.stopped = true;
                     entry.state = 'Upload could not start. Refresh the page before retrying.';
                 }
-                this.finished ||= entry.state === 'Uploaded';
                 this.notice = entry.name + ': ' + entry.state;
             }
         } finally {
             for (const entry of this.entries) {
                 if (entry.state === 'Waiting') entry.state = 'Not uploaded';
             }
+            if (this.entries.some(entry => entry.id)) await this.refreshCollection();
             this.request = null;
             this.busy = false;
             input.value = '';
+        }
+    },
+
+    async refreshCollection() {
+        try {
+            const response = await fetch(location.href, {
+                headers: {Accept: 'text/html'}, redirect: 'error', signal: AbortSignal.timeout(10000),
+            });
+            if (!response.ok) throw new Error('Collection unavailable');
+            const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+            const updated = page.querySelector('[data-media-collection]');
+            const current = document.querySelector('[data-media-collection]');
+            if (!updated || !current) throw new Error('Collection unavailable');
+            current.replaceWith(updated);
+            const count = document.querySelector('[data-media-count]');
+            const updatedCount = page.querySelector('[data-media-count]');
+            if (count && updatedCount) count.textContent = updatedCount.textContent;
+            const uploaded = this.entries.filter(entry => entry.id);
+            for (const entry of uploaded) {
+                entry.visible = !!updated.querySelector('[data-media-id="' + entry.id + '"]');
+            }
+            this.notice = uploaded.length + ' of ' + this.entries.length + ' files uploaded. '
+                + uploaded.filter(entry => entry.visible).length + ' on this page.';
+            this.$dispatch('media-collection-updated');
+        } catch {
+            this.notice = 'Uploads saved. The collection could not be updated. Use the links below to find uploaded images.';
         }
     },
 
@@ -83,6 +108,12 @@ Alpine.data('mediaUpload', () => ({
             };
             xhr.onload = () => {
                 entry.state = uploadResult(xhr);
+                if (xhr.status === 201) {
+                    try {
+                        const {id} = JSON.parse(xhr.responseText);
+                        if (Number.isSafeInteger(id) && id > 0) entry.id = id;
+                    } catch {}
+                }
                 if (![201, 413, 422].includes(xhr.status)) this.stopped = true;
             };
             xhr.onerror = () => {

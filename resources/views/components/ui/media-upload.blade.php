@@ -10,7 +10,6 @@
     <div class="flex flex-wrap gap-2">
         <x-ui.button type="submit" ::disabled="busy">Upload images</x-ui.button>
         <x-ui.button variant="outline" x-show="busy" x-cloak @click="cancel()">Cancel uploads</x-ui.button>
-        <x-ui.button variant="ghost" x-show="finished && !busy" x-cloak @click="location.reload()">Refresh library</x-ui.button>
     </div>
     <p class="ui-help" role="status" x-text="notice"></p>
     <template x-for="(entry, index) in entries" :key="index">
@@ -18,6 +17,12 @@
             <span x-text="entry.name"></span>
             <progress max="100" :value="entry.progress" x-show="entry.state === 'Uploading'" :aria-label="'Uploading ' + entry.name"></progress>
             <span x-text="entry.state"></span>
+            @unless($picker)
+                <a x-show="entry.id" :href="entry.id ? '/media/' + entry.id : null" class="ms-1 underline underline-offset-4">View uploaded item</a>
+            @else
+                <a x-show="entry.id && !entry.visible" :href="entry.id ? '/media/picker?sort=newest{{ $avatar ? '&avatar=1' : '' }}' : null"
+                    class="ms-1 underline underline-offset-4">Browse newest images</a>
+            @endunless
         </div>
     </template>
 </form>

@@ -1,16 +1,19 @@
-<x-layouts.workspace title="Media Library" :description="number_format($collectionTotal).' '.Str::plural('file', $collectionTotal).($trash ? ' in Trash' : ($admin ? ' across the workspace' : ' in your library'))">
+<x-layouts.workspace title="Media Library">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <p data-media-count class="ui-help">{{ number_format($collectionTotal) }} {{ Str::plural('file', $collectionTotal) }} {{ $trash ? 'in Trash' : ($admin ? 'across the workspace' : 'in your library') }}</p>
+        @unless($admin || $trash)
+            <x-ui.modal title="Upload images">
+                <x-slot:trigger><x-ui.button icon="upload">Upload images</x-ui.button></x-slot:trigger>
+                <x-ui.media-upload />
+            </x-ui.modal>
+        @endunless
+    </div>
     @unless($admin)
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
             <nav aria-label="Media collections" class="flex flex-wrap gap-1">
                 <x-ui.button :href="route('media.index', $filters)" :variant="$trash ? 'ghost' : 'secondary'" :aria-current="$trash ? null : 'page'">All Media</x-ui.button>
                 <x-ui.button :href="route('media.trash', $filters)" :variant="$trash ? 'secondary' : 'ghost'" :aria-current="$trash ? 'page' : null" icon="trash">Trash</x-ui.button>
             </nav>
-            @unless($trash)
-                <x-ui.modal title="Upload images">
-                    <x-slot:trigger><x-ui.button icon="upload">Upload images</x-ui.button></x-slot:trigger>
-                    <x-ui.media-upload />
-                </x-ui.modal>
-            @endunless
         </div>
     @endunless
 
@@ -18,7 +21,10 @@
         $grid = ($filters['layout'] ?? 'grid') === 'grid';
         $collectionRoute = $admin ? 'admin.media.index' : ($trash ? 'media.trash' : 'media.index');
     @endphp
-    <x-media.filters :$filters :$admin :$trash />
+    <details class="rounded-ui border border-border p-3" @if(filled($filters['q'] ?? null) || filled($filters['type'] ?? null)) open @endif>
+        <summary class="cursor-pointer text-sm font-medium">Search and filters</summary>
+        <div class="mt-3"><x-media.filters :$filters :$admin :$trash /></div>
+    </details>
     <nav aria-label="Media layout" class="flex flex-wrap gap-1">
         @foreach(['grid' => 'Grid', 'list' => 'List'] as $layout => $label)
             @php($current = $grid === ($layout === 'grid'))
@@ -27,6 +33,7 @@
         @endforeach
     </nav>
 
+    <div data-media-collection class="space-y-4">
     @if($items->isEmpty())
         @if($items->total())
             <x-ui.empty-state title="Page out of range">
@@ -42,11 +49,12 @@
     @else
         <div @unless($admin) x-data="mediaSelection" @pageshow.window="clear()" @endunless>
             @unless($admin)
-                <form id="bulk-media" method="post" action="{{ route($trash ? 'media.restore' : 'media.bulk-delete') }}" class="mb-3 flex flex-wrap items-center gap-3 border-b border-border pb-3">
+                <form id="bulk-media" method="post" action="{{ route($trash ? 'media.restore' : 'media.bulk-delete', $filters) }}" class="mb-3 flex flex-wrap items-center gap-3 border-b border-border pb-3">
                     @csrf
                     <x-ui.checkbox label="Select all on this page" x-cloak x-ref="master" @change="togglePage($event.target.checked)" />
                     <span class="ui-help" role="status" x-text="notice || selected.length + ' selected'"></span>
-                    <x-ui.button variant="ghost" size="sm" x-cloak ::disabled="!selected.length" @click="clear(true)">Deselect all</x-ui.button>
+                    <div x-show="selected.length" x-cloak class="flex flex-wrap items-center gap-2" >
+                    <x-ui.button variant="ghost" size="sm" x-cloak ::disabled="!selected.length" @click="clear(true); $refs.master.focus()">Deselect all</x-ui.button>
                     @if($trash)
                         <x-ui.button type="submit" size="sm" variant="outline" busy-on-submit ::disabled="!canRestore">Restore selected</x-ui.button>
                     @endif
@@ -55,13 +63,14 @@
                             <x-ui.button size="sm" variant="outline" ::disabled="!selected.length">{{ $trash ? 'Permanently delete selected' : 'Move selected to Trash' }}</x-ui.button>
                         </x-slot:trigger>
                         <p class="ui-help mb-3">{{ $trash ? 'The selected images and their files will be permanently removed. This cannot be undone.' : 'You can restore these images from Trash. Images used for branding or profile photos cannot be moved.' }}</p>
-                        <x-ui.button type="submit" :formaction="$trash ? route('media.purge') : null" :name="$trash ? '_method' : null" :value="$trash ? 'DELETE' : null" variant="destructive" busy-on-submit>{{ $trash ? 'Permanently delete' : 'Move to Trash' }}</x-ui.button>
+                        <x-ui.button type="submit" :formaction="$trash ? route('media.purge', $filters) : null" :name="$trash ? '_method' : null" :value="$trash ? 'DELETE' : null" variant="destructive" busy-on-submit>{{ $trash ? 'Permanently delete' : 'Move to Trash' }}</x-ui.button>
                     </x-ui.modal>
+                    </div>
                 </form>
             @endunless
             <ul @class(['grid gap-3', 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' => $grid])>
                 @foreach($items as $image)
-                    <li class="rounded-ui border border-border bg-surface p-3" @unless($admin) :class="{ 'ring-2 ring-inset ring-focus': selected.includes('{{ $image->id }}') }" @endunless>
+                    <li data-media-id="{{ $image->id }}" class="rounded-ui border border-border bg-surface p-3" @unless($admin) :class="{ 'ring-2 ring-inset ring-focus': selected.includes('{{ $image->id }}') }" @endunless>
                         <div @class(['min-w-0 gap-3', 'grid' => $grid, 'flex items-center' => !$grid])>
                             @if($trash || !$image->thumbnail)
                                 <div @class(['grid shrink-0 place-items-center rounded-ui bg-muted', 'aspect-video' => $grid, 'size-12' => !$grid])>
@@ -90,7 +99,7 @@
                                     @change="sync()" :aria-label="'Select '.$image->filename" label="Select" />
                                 @if($trash)
                                     @unless($image->purge_requested_at)
-                                        <form method="post" action="{{ route('media.restore') }}">
+                                        <form method="post" action="{{ route('media.restore', $filters) }}">
                                             @csrf
                                             <input type="hidden" name="items[]" value="{{ $image->id }}">
                                             <x-ui.button type="submit" size="sm" variant="outline" busy-on-submit>Restore</x-ui.button>
@@ -99,7 +108,7 @@
                                     <x-ui.modal title="Permanently delete this image?">
                                         <x-slot:trigger><x-ui.button size="sm" variant="ghost">{{ $image->purge_requested_at ? 'Retry deletion' : 'Permanently delete' }}</x-ui.button></x-slot:trigger>
                                         <p class="ui-help mb-3">This permanently removes the image and its files. It cannot be undone.</p>
-                                        <form method="post" action="{{ route('media.purge') }}">
+                                        <form method="post" action="{{ route('media.purge', $filters) }}">
                                             @csrf
                                             @method('DELETE')
                                             <input type="hidden" name="items[]" value="{{ $image->id }}">
@@ -125,4 +134,5 @@
         </p>
         @unless($items->isEmpty())<x-ui.pagination :paginator="$items" numbered />@endunless
     </footer>
+    </div>
 </x-layouts.workspace>
