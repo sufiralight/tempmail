@@ -3,10 +3,13 @@
 namespace App\Media;
 
 use App\Administration\AuditLog;
+use App\Http\SafeErrors;
 use App\Models\Media;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -94,36 +97,111 @@ final class MediaStorage
         }
     }
 
+    public const int MAX_SELECTION = 80;
+
     /** @param list<int> $ids */
-    public function delete(User $owner, array $ids, bool $bulk): void
+    public function moveToTrash(User $owner, array $ids): void
     {
-        $items = DB::transaction(function () use ($owner, $ids, $bulk) {
-            DB::table('workspace_settings')->where('id', 1)->increment('revision');
-            $items = Media::withTrashed()->whereIn('id', $ids)->where('user_id', $owner->id)->get();
-            abort_unless($items->count() === count($ids), 404);
-            if (DB::table('branding_assets')->whereIn('media_id', $ids)->exists()) {
-                throw ValidationException::withMessages(['media' => 'Remove the branding references before deleting these images.']);
-            }
+        DB::transaction(function () use ($owner, $ids): void {
+            $items = $this->lockSelection($owner, $ids, trashed: false);
             foreach ($items as $item) {
-                if (! $item->trashed()) {
-                    $item->delete();
-                    $this->audit->record($owner, $bulk ? 'media.bulk_deleted' : 'media.deleted', 'media', $item->id);
-                }
+                $item->delete();
+                $this->audit->record($owner, 'media.trashed', 'media', $item->id);
             }
-
-            return $items;
         }, 3);
-
-        foreach ($items as $item) {
-            $this->purge($item);
-        }
     }
 
-    public function purge(Media $media): void
+    /** @param list<int> $ids */
+    public function restore(User $owner, array $ids): void
     {
-        if (Storage::disk('media')->delete([$this->path($media), $this->path($media, true)])) {
-            $media->forceDelete();
+        DB::transaction(function () use ($owner, $ids): void {
+            $items = $this->lockSelection($owner, $ids, trashed: true);
+            $disk = Storage::disk('media');
+            foreach ($items as $item) {
+                if ($item->purge_requested_at !== null) {
+                    throw ValidationException::withMessages(['media' => 'Permanent deletion has already started. Retry deletion from Trash.']);
+                }
+                if (! $disk->exists($this->path($item)) || ($item->thumbnail && ! $disk->exists($this->path($item, true)))) {
+                    throw ValidationException::withMessages(['media' => 'An original or preview file is missing. Ask the operator to recover it from a backup before restoring.']);
+                }
+            }
+            foreach ($items as $item) {
+                $item->restore();
+                $this->audit->record($owner, 'media.restored', 'media', $item->id);
+            }
+        }, 3);
+    }
+
+    /** @param list<int> $ids */
+    public function permanentlyDelete(User $owner, array $ids): int
+    {
+        DB::transaction(function () use ($owner, $ids): void {
+            $items = $this->lockSelection($owner, $ids, trashed: true);
+            foreach ($items as $item) {
+                if ($item->purge_requested_at === null) {
+                    $item->forceFill(['purge_requested_at' => now()])->save();
+                    $this->audit->record($owner, 'media.purge_requested', 'media', $item->id);
+                }
+            }
+        }, 3);
+
+        $completed = 0;
+        foreach ($ids as $id) {
+            try {
+                $completed += (int) DB::transaction(function () use ($owner, $id): bool {
+                    $this->lockWorkspace();
+                    $item = Media::onlyTrashed()->where('user_id', $owner->id)->find($id);
+                    if ($item === null) {
+                        return ! Media::withTrashed()->whereKey($id)->exists();
+                    }
+                    if ($item->purge_requested_at === null || DB::table('branding_assets')->where('media_id', $id)->exists()) {
+                        return false;
+                    }
+
+                    $disk = Storage::disk('media');
+                    $paths = [$this->path($item), $this->path($item, true)];
+                    foreach ($paths as $path) {
+                        if ($disk->exists($path) && ! $disk->delete($path)) {
+                            return false;
+                        }
+                    }
+
+                    $item->forceDelete();
+                    $this->audit->record($owner, 'media.permanently_deleted', 'media', $id);
+
+                    return true;
+                }, 3);
+            } catch (Throwable $exception) {
+                // The committed purge marker remains available for a manual retry.
+                SafeErrors::report($exception);
+            }
         }
+
+        return $completed;
+    }
+
+    private function lockWorkspace(): void
+    {
+        DB::table('workspace_settings')->where('id', 1)->increment('revision');
+    }
+
+    /** @param list<int> $ids
+     * @return Collection<int, Media>
+     */
+    private function lockSelection(User $owner, array $ids, bool $trashed): Collection
+    {
+        $this->lockWorkspace();
+        $query = $trashed ? Media::onlyTrashed() : Media::query();
+        $items = $query->whereIn('id', $ids)->where('user_id', $owner->id)->get();
+        abort_unless($items->count() === count($ids), 404);
+        foreach ($items as $item) {
+            Gate::forUser($owner)->authorize('view', $item);
+        }
+        if (DB::table('branding_assets')->whereIn('media_id', $ids)->exists()) {
+            throw ValidationException::withMessages(['media' => 'Remove the branding references before changing these images.']);
+        }
+
+        return $items;
     }
 
     public function path(Media $media, bool $preview = false): string

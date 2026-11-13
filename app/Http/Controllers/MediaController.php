@@ -16,13 +16,15 @@ final class MediaController extends Controller
 {
     public function index(Request $request): Response
     {
-        $filters = $request->validate(['q' => 'nullable|string|max:100', 'type' => 'nullable|in:jpg,png,webp,gif', 'sort' => 'nullable|in:newest,oldest,name,size', 'layout' => 'nullable|in:grid,list']);
+        $filters = $request->validate(['q' => 'nullable|string|max:100', 'type' => 'nullable|in:jpg,png,webp,gif', 'sort' => 'nullable|in:newest,oldest,name,size', 'layout' => 'nullable|in:grid,list', 'per_page' => 'nullable|in:20,40,80']);
         $admin = $request->routeIs('admin.media.index');
-        $query = Media::query();
+        $trash = $request->routeIs('media.trash');
+        $picker = $request->routeIs('media.picker');
+        $query = $trash ? Media::onlyTrashed() : Media::query();
         if (! $admin) {
             $query->where('user_id', $request->user()->id);
         }
-        if (! empty($filters['q'])) {
+        if (($filters['q'] ?? '') !== '') {
             $pattern = '%'.$filters['q'].'%';
             $query->where(fn ($items) => $items->whereLike('filename', $pattern)->orWhereLike('title', $pattern));
         }
@@ -36,14 +38,14 @@ final class MediaController extends Controller
             default => $query->orderByDesc('id'),
         };
 
-        return response()->view($request->routeIs('media.picker') ? 'media.picker' : 'media.index', [
-            'items' => $query->orderBy('id')->paginate(20)->appends($filters), 'filters' => $filters, 'admin' => $admin,
-        ]);
+        $items = $query->orderBy('id')->paginate($picker ? 20 : (int) ($filters['per_page'] ?? 20))->appends($filters);
+
+        return response()->view($picker ? 'media.picker' : 'media.index', compact('items', 'filters', 'admin', 'trash'));
     }
 
     public function legacyIndex(Request $request): RedirectResponse
     {
-        return redirect()->route('media.index', $request->only(['q', 'type', 'sort', 'layout', 'page']));
+        return redirect()->route('media.index', $request->only(['q', 'type', 'sort', 'layout', 'per_page', 'page']));
     }
 
     public function legacyPicker(Request $request): RedirectResponse
@@ -92,17 +94,46 @@ final class MediaController extends Controller
     public function destroy(Request $request, Media $media, MediaStorage $storage)
     {
         Gate::authorize('view', $media);
-        $storage->delete($request->user(), [$media->id], false);
+        $storage->moveToTrash($request->user(), [$media->id]);
 
-        return redirect()->route('media.index')->with('status', 'Image removed.');
+        return redirect()->route('media.index')->with('status', 'Image moved to Trash.');
     }
 
     public function bulkDelete(Request $request, MediaStorage $storage)
     {
-        $data = $request->validate(['items' => 'required|array|max:20', 'items.*' => 'required|integer|distinct']);
-        $storage->delete($request->user(), array_map('intval', $data['items']), true);
+        $storage->moveToTrash($request->user(), $this->selection($request));
 
-        return redirect()->route('media.index')->with('status', 'Selected images removed.');
+        return redirect()->route('media.index')->with('status', 'Selected images moved to Trash.');
+    }
+
+    public function restore(Request $request, MediaStorage $storage): RedirectResponse
+    {
+        $storage->restore($request->user(), $this->selection($request));
+
+        return redirect()->route('media.trash')->with('status', 'Selected images restored.');
+    }
+
+    public function purge(Request $request, MediaStorage $storage): RedirectResponse
+    {
+        $ids = $this->selection($request);
+        $completed = $storage->permanentlyDelete($request->user(), $ids);
+        $response = redirect()->route('media.trash');
+        if ($completed !== count($ids)) {
+            return $response->withErrors(['media' => "{$completed} of ".count($ids).' images permanently deleted. Retry the remaining images from Trash.']);
+        }
+
+        return $response->with('status', 'Selected images permanently deleted.');
+    }
+
+    /** @return list<int> */
+    private function selection(Request $request): array
+    {
+        $data = $request->validate([
+            'items' => 'required|array|list|max:'.MediaStorage::MAX_SELECTION,
+            'items.*' => 'required|integer|min:1|distinct',
+        ]);
+
+        return array_map('intval', $data['items']);
     }
 
     public function file(Request $request, Media $media, MediaStorage $storage)

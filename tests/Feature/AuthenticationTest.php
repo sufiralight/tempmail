@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Auth\AccountSessions;
+use App\Models\Media;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -61,8 +63,79 @@ class AuthenticationTest extends TestCase
         $this->delete("/media/{$id}")->assertSessionHasErrors('media');
         $this->patch('/admin/settings/branding', array_fill_keys(array_keys($branding), null))->assertRedirect();
         $this->post('/media/bulk-delete', ['items' => [$id]])->assertRedirect();
+        $this->assertSoftDeleted('media', ['id' => $id]);
+        $image = Media::onlyTrashed()->findOrFail($id);
+        $path = $image->storage_key.'.png';
+        Storage::disk('media')->assertExists($path);
+        $this->get('/media')->assertDontSee('Legacy edit');
+        $this->get('/media/picker')->assertDontSee('Legacy edit');
+        $this->get("/media/{$id}/file")->assertNotFound();
+        $this->get('/media/trash')->assertOk()->assertSee('fixture.png');
+        $this->actingAs($other)->postJson('/media/trash/restore', ['items' => [$id]])->assertNotFound();
+        $this->actingAs($owner)->post('/media/trash/restore', ['items' => [$id]])->assertRedirect('/media/trash');
+        $this->get("/media/{$id}/file")->assertOk();
+        $this->deleteJson('/media/trash', ['items' => [$id]])->assertNotFound();
+        $this->delete("/media/{$id}")->assertRedirect('/media');
+        Storage::disk('media')->delete($path);
+        $this->postJson('/media/trash/restore', ['items' => [$id]])->assertUnprocessable()->assertJsonValidationErrors('media');
+        $this->delete('/media/trash', ['items' => [$id]])->assertRedirect('/media/trash')->assertSessionHasNoErrors();
+        Storage::disk('media')->assertMissing($image->storage_key.'.preview.png');
         $this->assertDatabaseMissing('media', ['id' => $id]);
-        $this->assertDatabaseHas('administrative_audits', ['action' => 'media.bulk_deleted', 'target_id' => $id]);
+        $this->assertDatabaseHas('administrative_audits', ['action' => 'media.permanently_deleted', 'target_id' => $id]);
+    }
+
+    public function test_media_pagination_and_bulk_selection_are_owner_scoped(): void
+    {
+        Storage::fake('media');
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $ids = [];
+        foreach (range(1, 24) as $number) {
+            $key = (string) Str::uuid();
+            Storage::disk('media')->put($key.'.png', 'fixture');
+            $ids[] = DB::table('media')->insertGetId([
+                'user_id' => $number === 24 ? $other->id : $owner->id,
+                'storage_key' => $key, 'filename' => sprintf('fixture-%02d.png', $number),
+                'mime' => 'image/png', 'extension' => 'png', 'bytes' => $number,
+                'width' => 1, 'height' => 1, 'created_at' => now(),
+            ]);
+        }
+        $this->actingAs($owner)->get('/media?q=fixture&type=png&sort=name&layout=list')
+            ->assertOk()->assertSee('23 results')->assertSee('fixture-20.png')->assertDontSee('fixture-21.png')
+            ->assertSee('aria-label="Page 2"', false);
+        $this->get('/media?q=fixture&type=png&sort=name&layout=list&page=2')
+            ->assertOk()->assertSee('fixture-21.png')->assertDontSee('fixture-24.png');
+        $this->get('/media?per_page=40')->assertOk()->assertSee('40 per page')->assertSee('fixture-23.png');
+        $this->getJson('/media?per_page=81')->assertUnprocessable();
+        $this->postJson('/media/bulk-delete', ['items' => range(1, 81)])->assertUnprocessable();
+        $this->postJson('/media/bulk-delete', ['items' => [$ids[0], $ids[23]]])->assertNotFound();
+        $this->get('/media?per_page=40')->assertSee('fixture-01.png');
+        $this->post('/media/bulk-delete', ['items' => array_slice($ids, 0, 2)])->assertRedirect('/media');
+        $this->post('/media/trash/restore', ['items' => array_slice($ids, 0, 2)])->assertRedirect('/media/trash');
+        $this->assertDatabaseHas('media', ['id' => $ids[0], 'deleted_at' => null]);
+        $this->assertDatabaseHas('media', ['id' => $ids[1], 'deleted_at' => null]);
+    }
+
+    public function test_failed_media_purge_retains_retry_state_and_blocks_restore(): void
+    {
+        $disk = Storage::fake('media');
+        $owner = User::factory()->create();
+        $this->actingAs($owner);
+        $id = $this->postJson('/media', ['image' => UploadedFile::fake()->image('retry.png')])
+            ->assertCreated()->json('id');
+        $this->delete("/media/{$id}")->assertRedirect('/media');
+
+        $unavailable = \Mockery::mock(FilesystemAdapter::class);
+        $unavailable->shouldReceive('exists')->once()->andReturnTrue();
+        $unavailable->shouldReceive('delete')->once()->andReturnFalse();
+        Storage::set('media', $unavailable);
+        $this->delete('/media/trash', ['items' => [$id]])->assertRedirect('/media/trash')->assertSessionHasErrors('media');
+        $this->assertNotNull(Media::onlyTrashed()->findOrFail($id)->purge_requested_at);
+        $this->postJson('/media/trash/restore', ['items' => [$id]])->assertUnprocessable()->assertJsonValidationErrors('media');
+
+        Storage::set('media', $disk);
+        $this->delete('/media/trash', ['items' => [$id]])->assertRedirect('/media/trash')->assertSessionHasNoErrors();
+        $this->assertDatabaseMissing('media', ['id' => $id]);
     }
 
     public function test_workspace_shell_groups_navigation_by_permissions_and_verification(): void

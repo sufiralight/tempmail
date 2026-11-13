@@ -116,6 +116,34 @@ Alpine.data('mediaUpload', () => ({
     },
 }));
 
+Alpine.data('mediaSelection', () => ({
+    selected: [], canRestore: false, notice: '',
+
+    inputs() {
+        return [...this.$el.querySelectorAll('input[type="checkbox"][form="bulk-media"]')];
+    },
+
+    sync() {
+        const inputs = this.inputs();
+        const checked = inputs.filter(input => input.checked);
+        this.selected = checked.map(input => input.value);
+        this.canRestore = checked.length > 0 && checked.every(input => !input.dataset.purgePending);
+        this.$refs.master.checked = checked.length > 0 && checked.length === inputs.length;
+        this.$refs.master.indeterminate = checked.length > 0 && checked.length < inputs.length;
+        this.notice = '';
+    },
+
+    togglePage(checked) {
+        for (const input of this.inputs()) input.checked = checked;
+        this.sync();
+    },
+
+    clear(announce = false) {
+        this.togglePage(false);
+        if (announce) this.notice = 'Selection cleared.';
+    },
+}));
+
 Alpine.data('mediaPicker', () => ({
     opened: false, preview: '', status: '',
     listeners: null,

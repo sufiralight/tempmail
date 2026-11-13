@@ -54,6 +54,9 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->middleware('throttle:20,1')->name('store');
         Route::get('/picker', 'index')->name('picker');
+        Route::get('/trash', 'index')->name('trash');
+        Route::post('/trash/restore', 'restore')->middleware('throttle:10,1,media-restore:')->name('restore');
+        Route::delete('/trash', 'purge')->middleware('throttle:10,1,media-purge:')->name('purge');
         Route::post('/bulk-delete', 'bulkDelete')->middleware('throttle:10,1')->name('bulk-delete');
         Route::get('/{media}/file', 'file')->whereNumber('media')->name('file');
         Route::get('/{media}', 'show')->whereNumber('media')->name('show');

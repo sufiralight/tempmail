@@ -77,3 +77,27 @@ test('handles status-specific HTML errors without displaying response content', 
         assert.equal(upload.busy, false);
     }
 });
+
+test('selection tracks only rendered checkboxes and prevents restoring pending purges', () => {
+    let selection;
+    runInNewContext(source.replace(/^import Alpine.*;$/m, ''), {
+        Alpine: {data(name, factory) { if (name === 'mediaSelection') selection = factory(); }},
+    });
+    const inputs = [
+        {value: '2', checked: true, dataset: {}},
+        {value: '5', checked: false, dataset: {purgePending: '1'}},
+    ];
+    selection.$el = {querySelectorAll: () => inputs};
+    selection.$refs = {master: {}};
+    selection.sync();
+    assert.equal(selection.$refs.master.indeterminate, true);
+    assert.equal(selection.canRestore, true);
+    selection.togglePage(true);
+    assert.equal(selection.selected.length, 2);
+    assert.equal(selection.$refs.master.checked, true);
+    assert.equal(selection.canRestore, false);
+    selection.clear(true);
+    assert.equal(selection.selected.length, 0);
+    assert.equal(selection.$refs.master.checked, false);
+    assert.equal(selection.notice, 'Selection cleared.');
+});

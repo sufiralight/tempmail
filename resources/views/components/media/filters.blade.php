@@ -1,5 +1,5 @@
-@props(['filters', 'picker' => false, 'admin' => false])
-<form method="get" action="{{ route($picker ? 'media.picker' : ($admin ? 'admin.media.index' : 'media.index')) }}" class="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3">
+@props(['filters', 'picker' => false, 'admin' => false, 'trash' => false])
+<form method="get" action="{{ route($picker ? 'media.picker' : ($admin ? 'admin.media.index' : ($trash ? 'media.trash' : 'media.index'))) }}" class="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
     <x-ui.input name="q" label="Search images" type="search" :value="$filters['q'] ?? null" maxlength="100" />
     <x-ui.select name="type" label="File type">
         <option value="">All types</option>
@@ -9,7 +9,12 @@
         @foreach(['newest'=>'Newest','oldest'=>'Oldest','name'=>'Name','size'=>'Size'] as $value => $label)<option value="{{ $value }}" @selected(($filters['sort'] ?? '') === $value)>{{ $label }}</option>@endforeach
     </x-ui.select>
     @unless($picker)
-        <x-ui.select name="layout" label="View"><option value="grid">Grid</option><option value="list" @selected(($filters['layout'] ?? '') === 'list')>List</option></x-ui.select>
+        <input type="hidden" name="layout" value="{{ $filters['layout'] ?? 'grid' }}">
+        <x-ui.select name="per_page" label="Per page">
+            @foreach([20, 40, 80] as $size)
+                <option value="{{ $size }}" @selected((int) ($filters['per_page'] ?? 20) === $size)>{{ $size }}</option>
+            @endforeach
+        </x-ui.select>
     @endunless
     <x-ui.button type="submit" variant="outline">Apply filters</x-ui.button>
 </form>
