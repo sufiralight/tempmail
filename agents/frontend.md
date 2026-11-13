@@ -7,3 +7,5 @@ Use the existing Laravel Vite plugin, Tailwind CSS 4 CSS-first config, and app C
 Use x-layouts.app for shared page structure and load its theme bootstrap before Vite styles. Follow [component reuse](blade-components.md), [visual rules](design-system.md), and [accessibility](accessibility.md).
 
 Use the global page progress controller for opt-in async work. Keep upload progress tied to measurable bytes and preserve native navigation.
+
+Use the [product patterns](../docs/design-system.md#product-patterns) for action placement, form feedback, overlays and collection state. Keep desktop and mobile navigation driven by the same items.

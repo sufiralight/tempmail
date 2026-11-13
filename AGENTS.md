@@ -23,6 +23,14 @@ Build a maintainable temporary email SaaS as a Laravel 13 modular monolith. PHP 
 
 Use the Pure Zinc visual system, the shared Blade catalog documented in [Components](docs/components.md), and WCAG 2.2 AA as the accessibility target. Require server-side authorization for privileged and ownership-sensitive operations. Protect secrets and preserve CSRF. Keep schema changes explicit and initial boot independent of a configured database. Support Apache and cPanel with public/ as document root and Vite assets built locally or in CI. Production must run without Node.js, npm, or persistent queue workers.
 
+## Product experience and definition of done
+
+Use the [design system](docs/design-system.md) as the product UX reference. Extend the shared Blade shell, semantic tokens and existing component APIs. Each screen should put its main task first. Forms need visible labels, inline errors, pending and completion feedback, and safe submission behavior. Keep current-page selection explicit and use confirmations for irreversible operations.
+
+A change is done when the normal entry point, authorization boundary, validation and failure path are verified, applicable tests and build checks have run, and the affected contracts and release steps are documented. Check changed interfaces by keyboard and at representative mobile and desktop widths in both themes using isolated data. Record untested cases explicitly. Keep production data and files out of test fixtures.
+
+Future phase and step prompts must reference this file and the applicable guides. For multilingual work, define locale, direction, slug uniqueness and inactive-language visibility before exposing content. Add locale-keyed translations when required by an implemented module.
+
 ## Git and releases
 
 Keep changes focused and commits descriptive. Preserve Git history and unrelated files. Obtain explicit authorization before rewriting history or force-pushing. Explain deployment configuration changes in the change summary. Keep .env, secrets, sensitive database dumps, runtime caches, and generated release assets out of Git. Use .env.example for non-sensitive settings and package public/build with releases.

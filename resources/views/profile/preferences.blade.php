@@ -14,7 +14,7 @@
                     <option value="{{ $zone }}" @selected(old('timezone', auth()->user()->timezone ?? config('app.timezone')) === $zone)>{{ $zone }}</option>
                 @endforeach
             </x-ui.select>
-            <x-ui.button type="submit" class="justify-self-start" busy-on-submit>Save preferences</x-ui.button>
+            <x-ui.button type="submit" class="justify-self-start" busy-on-submit loading-label="Saving preferences…">Save preferences</x-ui.button>
         </form>
     </x-ui.card>
 </x-workspace.profile>

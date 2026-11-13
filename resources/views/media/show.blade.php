@@ -31,7 +31,7 @@
             <x-ui.textarea name="caption" label="Caption" help="Short text to display with the image." :value="old('caption', $media->caption)" maxlength="500" rows="2" />
             <x-ui.textarea name="description" label="Description" help="Add context for future use of this image." :value="old('description', $media->description)" maxlength="4000" rows="4" />
             <div class="flex flex-wrap gap-2">
-                <x-ui.button type="submit" busy-on-submit>Save changes</x-ui.button>
+                <x-ui.button type="submit" busy-on-submit loading-label="Saving metadata…">Save changes</x-ui.button>
                 <x-ui.button :href="route('media.index', absolute: false)" variant="ghost">Cancel</x-ui.button>
             </div>
         </form>

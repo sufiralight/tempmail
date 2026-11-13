@@ -5,3 +5,5 @@ Keep one Laravel deployable and one application database. Introduce modules insi
 Use the ownership map in [Architecture](../docs/architecture.md). A module owns its rules, write operations, and schema. Cross-module calls go through the owning module's application operation or an explicitly documented read contract. Keep dependency direction visible and break cycles before merging. Use shared infrastructure only when multiple concrete callers need it.
 
 Keep HTTP concerns at the edge and business rules out of Blade. Keep shared visual patterns in Blade components. Avoid microservices and framework layers that duplicate Laravel.
+
+Apply schema changes during controlled releases and verify required migrations before exposing a module. For future translated content, use the owning module’s locale-keyed model and enforce locale availability at the route boundary.

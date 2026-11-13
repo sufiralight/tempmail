@@ -44,7 +44,8 @@ class AuthenticationTest extends TestCase
         $this->patch("/media-library/{$id}", ['title' => 'Legacy edit'])->assertRedirect("/media/{$id}");
         $metadata = ['title' => 'Legacy edit', 'alt_text' => 'Sample', 'caption' => 'A caption', 'description' => 'Image context'];
         $this->patchJson("/media/{$id}", ['caption' => str_repeat('x', 501)])->assertUnprocessable()->assertJsonValidationErrors('caption');
-        $this->patch("/media/{$id}", $metadata)->assertRedirect();
+        $this->get("/media/{$id}")->assertOk()->assertSee('Saving metadata…')->assertSee('data-ui-submit', false);
+        $this->patch("/media/{$id}", $metadata)->assertRedirect()->assertSessionHas('status', 'Image metadata saved.');
         $this->assertDatabaseHas('media', ['id' => $id] + $metadata);
         $this->get('/media')->assertOk()->assertSee('Legacy edit');
         $this->get('/media/picker')->assertOk()->assertSee('data-caption="A caption"', false);

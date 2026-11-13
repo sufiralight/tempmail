@@ -14,7 +14,7 @@
             <x-ui.password-field name="password" id="profile-password" label="New password" autocomplete="new-password" aria-describedby="profile-strength" required />
             <x-ui.password-field name="password_confirmation" id="profile-confirmation" label="Confirm new password" autocomplete="new-password" aria-describedby="profile-strength" required />
             <x-ui.password-strength id="profile-strength" password-id="profile-password" confirmation-id="profile-confirmation" />
-            <x-ui.button type="submit" class="justify-self-start" busy-on-submit>Change password</x-ui.button>
+            <x-ui.button type="submit" class="justify-self-start" busy-on-submit loading-label="Changing password…">Change password</x-ui.button>
         </form>
     </x-ui.card>
     <x-ui.card title="Recent account activity">

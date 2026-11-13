@@ -22,7 +22,7 @@
                     <option value="0" @selected(!$account->is_active)>Inactive</option>
                 </x-ui.select>
                 <x-ui.checkbox name="confirmed" required label="I confirm this change to account access." />
-                <x-ui.button type="submit" busy-on-submit>Save access</x-ui.button>
+                <x-ui.button type="submit" busy-on-submit loading-label="Saving access…">Save access</x-ui.button>
             </form>
         </x-ui.card>
     @endcan

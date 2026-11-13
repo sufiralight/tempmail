@@ -26,3 +26,17 @@ Check both Vite entry points and referenced files in the production manifest. Us
 Report each command executed, outcome, and coverage gaps. SQLite smoke tests alone do not establish MySQL or MariaDB compatibility.
 
 The installer integration test opts into a disposable MariaDB instance bound to 127.0.0.1 on a non-default port. Create a new, empty schema named tempmail_installer_test_ followed by 16 lowercase hexadecimal characters on that isolated instance. Set INSTALLER_TEST_MYSQL_PORT and INSTALLER_TEST_MYSQL_DATABASE and run the suite. The fixture uses an empty root password and writes migrations and an administrator only to that schema. Discard the instance afterward. The ordinary suite skips this test when the fixture is absent.
+
+## Browser QA matrix
+
+For changed screens, exercise the normal task at 375, 390, 768, 1024 and 1440 CSS pixels where applicable. Check Light, Dark and System, focus visibility, keyboard submission, dialog Escape and focus return, and horizontal overflow. Use an isolated database, temporary media disk and disposable accounts. Report each executed result and any gaps.
+
+For SEO saves, click the visible submit control, check the server response and confirmation, then reload and verify persisted values. For collection changes, exercise selection, upload refresh, Trash and Restore, and protected deletion. Check the deployed schema before opening authenticated traffic.
+
+### Regression prevention
+
+- Verify direct localhost and 127.0.0.1 installer access through the existing operator gate. Keep installer authorization out of public setup forms.
+- Check migration status before opening routes that query new tables. The confirmed media 503 was an absent purge_requested_at column on the collection GET. Apply migration 000010 before accepting uploads that write original_filename.
+- Keep selection queries scoped to the collection root. Check avatar loading with the actual browser and preserve the media record on avatar removal. Test owner-scoped filename collisions, SEO persistence and automatic refresh.
+- Check registration and recovery links under the intended guest configuration. Check saved and system theme transitions after reload.
+- UI translation and CMS SEO tables, locale-specific slugs, RTL behavior and inactive-language visibility are future module checks. Verify schema and locale boundaries when those modules ship.

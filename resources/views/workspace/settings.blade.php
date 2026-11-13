@@ -5,7 +5,7 @@
                 @csrf
                 @method('PATCH')
                 <x-ui.input name="display_name" label="Workspace display name" :value="$name" maxlength="80" required />
-                <x-ui.button type="submit" busy-on-submit class="justify-self-start">Save settings</x-ui.button>
+                <x-ui.button type="submit" busy-on-submit class="justify-self-start" loading-label="Saving settings…">Save settings</x-ui.button>
             </form>
         @else
             <p>{{ $name }}</p>
