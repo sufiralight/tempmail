@@ -50,7 +50,11 @@ final class MediaController extends Controller
             default => $query->orderByDesc('id'),
         };
 
-        $items = $query->orderBy('id')->paginate($picker ? 20 : (int) ($filters['per_page'] ?? 20), ['id', 'filename', 'title', 'alt_text', 'extension', 'bytes', 'thumbnail', 'created_at', 'deleted_at', 'purge_requested_at'])->appends($filters);
+        $columns = ['id', 'filename', 'title', 'alt_text', 'extension', 'bytes', 'thumbnail', 'created_at', 'deleted_at', 'purge_requested_at'];
+        if ($picker) {
+            array_push($columns, 'caption', 'description');
+        }
+        $items = $query->orderBy('id')->paginate($picker ? 20 : (int) ($filters['per_page'] ?? 20), $columns)->appends($filters);
 
         $collectionTotal ??= $items->total();
 
@@ -103,9 +107,14 @@ final class MediaController extends Controller
     public function update(Request $request, Media $media)
     {
         Gate::authorize('view', $media);
-        $media->forceFill($request->validate(['title' => 'nullable|string|max:255', 'alt_text' => 'nullable|string|max:255']))->save();
+        $media->forceFill($request->validate([
+            'title' => 'nullable|string|max:255',
+            'alt_text' => 'nullable|string|max:255',
+            'caption' => 'nullable|string|max:500',
+            'description' => 'nullable|string|max:4000',
+        ]))->save();
 
-        return redirect()->route('media.show', $media)->with('status', 'Image details saved.');
+        return redirect()->route('media.show', $media)->with('status', 'Image metadata saved.');
     }
 
     public function destroy(Request $request, Media $media, MediaStorage $storage)

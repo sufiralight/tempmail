@@ -42,7 +42,13 @@ class AuthenticationTest extends TestCase
         $this->get("/media/{$id}/file?preview=1")->assertOk()->assertHeader('Content-Type', 'image/png');
         $this->patch("/media/{$id}", ['title' => 'New title', 'alt_text' => 'Sample'])->assertRedirect();
         $this->patch("/media-library/{$id}", ['title' => 'Legacy edit'])->assertRedirect("/media/{$id}");
-        $this->assertDatabaseHas('media', ['id' => $id, 'title' => 'Legacy edit', 'alt_text' => 'Sample']);
+        $metadata = ['title' => 'Legacy edit', 'alt_text' => 'Sample', 'caption' => 'A caption', 'description' => 'Image context'];
+        $this->patchJson("/media/{$id}", ['caption' => str_repeat('x', 501)])->assertUnprocessable()->assertJsonValidationErrors('caption');
+        $this->patch("/media/{$id}", $metadata)->assertRedirect();
+        $this->assertDatabaseHas('media', ['id' => $id] + $metadata);
+        $this->get('/media')->assertOk()->assertSee('Legacy edit');
+        $this->get('/media/picker')->assertOk()->assertSee('data-caption="A caption"', false);
+        $this->actingAs($other)->patchJson("/media/{$id}", ['caption' => 'Unauthorized'])->assertForbidden();
         $this->actingAs($other)->get("/media/{$id}/file")->assertForbidden();
         $this->get('/media/picker')->assertOk()->assertDontSee('fixture.png');
         $this->get('/admin/settings/branding')->assertForbidden();
@@ -73,6 +79,7 @@ class AuthenticationTest extends TestCase
         $this->get('/media/trash')->assertOk()->assertSee('fixture.png');
         $this->actingAs($other)->postJson('/media/trash/restore', ['items' => [$id]])->assertNotFound();
         $this->actingAs($owner)->post('/media/trash/restore', ['items' => [$id]])->assertRedirect('/media/trash');
+        $this->assertDatabaseHas('media', ['id' => $id] + $metadata);
         $this->get("/media/{$id}/file")->assertOk();
         $this->deleteJson('/media/trash', ['items' => [$id]])->assertNotFound();
         $this->delete("/media/{$id}")->assertRedirect('/media');

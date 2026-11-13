@@ -22,7 +22,7 @@ function uploadResult(xhr) {
                 ? 'Too many uploads. Wait ' + seconds + ' seconds before retrying.'
                 : 'Too many uploads. Wait before retrying.';
         }
-        case 503: return 'The service is temporarily unavailable. Try again later.';
+        case 503: return 'The service is temporarily unavailable. If this persists, ask the operator to check the database and migration status.';
         case 507: return 'Storage could not save this image. Try again later.';
         default: return 'The upload could not be confirmed. Refresh the library before retrying.';
     }
@@ -190,6 +190,12 @@ Alpine.data('mediaPicker', () => ({
             this.$refs.selection.value = event.data.id;
             this.preview = expected;
             this.status = 'Image selected.';
+            const metadata = {};
+            for (const key of ['title', 'alt_text', 'caption', 'description']) {
+                const value = event.data.metadata?.[key];
+                metadata[key] = typeof value === 'string' ? value : '';
+            }
+            this.$dispatch('media-selected', {id: event.data.id, preview: expected, metadata});
             frame.closest('dialog').close();
         }, {signal: this.listeners.signal});
     },

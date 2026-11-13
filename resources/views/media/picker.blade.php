@@ -12,11 +12,12 @@
                 <label data-media-id="{{ $image->id }}" class="grid min-w-0 gap-1 rounded-ui border border-border p-2 text-sm">
                     <img class="aspect-square w-full object-contain" loading="lazy" src="{{ route('media.file', ['media' => $image, 'preview' => 1], absolute: false) }}" alt="">
                     <span class="break-all"><input type="radio" name="picker-choice" value="{{ $image->id }}" class="ui-choice-input"
+                        data-title="{{ $image->title }}" data-alt-text="{{ $image->alt_text }}" data-caption="{{ $image->caption }}" data-description="{{ $image->description }}"
                         data-preview="{{ route('media.file', ['media' => $image, 'preview' => 1], absolute: false) }}" @change="choice = $event.target"> {{ $image->title ?? $image->filename }}</span>
                 </label>
             @endforeach
         </fieldset>
-        <x-ui.button ::disabled="!choice" @click="window.parent.postMessage({ type: 'tempmail-media', id: choice.value, preview: choice.dataset.preview }, location.origin)">Confirm selection</x-ui.button>
+        <x-ui.button ::disabled="!choice" @click="window.parent.postMessage({ type: 'tempmail-media', id: choice.value, preview: choice.dataset.preview, metadata: { title: choice.dataset.title, alt_text: choice.dataset.altText, caption: choice.dataset.caption, description: choice.dataset.description } }, location.origin)">Confirm selection</x-ui.button>
         <x-ui.pagination :paginator="$items" />
         </div>
     </div>
