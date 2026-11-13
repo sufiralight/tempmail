@@ -26,7 +26,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->web(replace: [PreventRequestForgery::class => VerifyWebRequestForgery::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->dontFlash(['database_password', 'token']);
+        $exceptions->dontFlash(['database_password', 'token', 'current_password']);
         $exceptions->dontReportWhen(fn () => request()->is('install', 'install/*'));
         $exceptions->render(function (Throwable $exception, Request $request) {
             if (! $request->is('install', 'install/*')) {
