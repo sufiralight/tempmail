@@ -13,7 +13,7 @@ class SafeErrorsTest extends TestCase
     {
         config(['app.debug' => true, 'app.key' => null, 'database.default' => 'unavailable']);
 
-        foreach ([403, 404, 419, 429, 500, 503] as $status) {
+        foreach ([403, 404, 413, 419, 429, 500, 503, 507] as $status) {
             Route::get('/test-error-'.$status, static fn () => abort($status, 'sensitive-internal-message', ['Retry-After' => '60']));
             $this->get('/test-error-'.$status)->assertStatus($status)->assertSee('<h1>', false)
                 ->assertDontSee('sensitive-internal-message')->assertHeader('X-Content-Type-Options', 'nosniff')
@@ -30,6 +30,12 @@ class SafeErrorsTest extends TestCase
             throw $exception;
         });
         $this->get('/schema-test')->assertStatus(503)->assertSee('Temporarily unavailable')->assertDontSee('secret database details');
+    }
+
+    public function test_boost_browser_collection_is_disabled(): void
+    {
+        $this->assertFalse(config('boost.browser_logs_watcher'));
+        $this->assertFalse(Route::has('boost.browser-logs'));
     }
 
     public function test_hsts_requires_production_https(): void

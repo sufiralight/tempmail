@@ -28,9 +28,11 @@ class AuthenticationTest extends TestCase
         $other = User::factory()->create();
         $this->get('/media')->assertRedirect('/login');
         $this->get('/media-library')->assertRedirect('/login');
-        $this->actingAs($owner)->get('/media')->assertOk()->assertSee('Media Library');
+        $this->actingAs($owner)->get('/media')->assertOk()->assertSee('Media Library')->assertSee('multiple="multiple"', false);
         $this->postJson('/media', ['image' => UploadedFile::fake()->createWithContent('bad.svg', '<svg/>')])
-            ->assertUnprocessable();
+            ->assertUnprocessable()->assertJsonPath('errors.image.0', 'Choose a JPEG, PNG, WebP or GIF image.');
+        $this->postJson('/media', ['image' => UploadedFile::fake()->image('large.png')->size(config('media.max_kib') + 1)])
+            ->assertUnprocessable()->assertJsonPath('errors.image.0', 'The file exceeds the '.config('media.max_kib').' KiB upload limit.');
         $response = $this->postJson('/media', ['image' => UploadedFile::fake()->image('fixture.png', 12, 14)])
             ->assertCreated();
         $id = $response->json('id');
@@ -46,6 +48,10 @@ class AuthenticationTest extends TestCase
         $this->get("/media-library/{$id}")->assertForbidden();
         $this->actingAs($owner)->get('/media-library/picker?q=fixture')->assertRedirect('/media/picker?q=fixture');
         $this->get('/admin/media')->assertOk()->assertSee('Legacy edit');
+        $this->assertActiveNavigation('/admin/media', '/admin/media');
+        $this->assertActiveNavigation("/admin/media/{$id}", '/admin/media');
+        $this->assertActiveNavigation('/admin/settings/branding', '/admin/settings/branding');
+        $this->assertActiveNavigation('/admin', '/admin');
         $this->get("/admin/media/{$id}")->assertOk()->assertDontSee('Save details');
         $this->actingAs($owner)->get('/admin/settings/branding')->assertOk()->assertSee('Choose image');
         $branding = ['logo' => $id, 'dark-logo' => $id, 'favicon' => null, 'social' => null];
@@ -57,6 +63,39 @@ class AuthenticationTest extends TestCase
         $this->post('/media/bulk-delete', ['items' => [$id]])->assertRedirect();
         $this->assertDatabaseMissing('media', ['id' => $id]);
         $this->assertDatabaseHas('administrative_audits', ['action' => 'media.bulk_deleted', 'target_id' => $id]);
+    }
+
+    private function assertActiveNavigation(string $page, string $active): void
+    {
+        $html = $this->get($page)->assertOk()->getContent();
+        preg_match_all('/<nav aria-label="Workspace navigation".*?<\/nav>/s', $html, $menus);
+        $this->assertCount(2, $menus[0]);
+
+        foreach ($menus[0] as $menu) {
+            preg_match_all('/<a\b[^>]*aria-current="page"[^>]*>/s', $menu, $links);
+            $this->assertCount(1, $links[0]);
+            $this->assertStringContainsString('href="'.$active.'"', $links[0][0]);
+        }
+    }
+
+    public function test_media_upload_rejects_stale_tokens_and_throttles_repeated_requests(): void
+    {
+        Storage::fake('media');
+        $this->postJson('/media')->assertUnauthorized();
+        $this->actingAs(User::factory()->create());
+
+        // Exercise the real middleware instead of its PHPUnit shortcut.
+        $this->app->instance('env', 'local');
+        $this->withSession(['_token' => 'current-token']);
+        $this->postJson('/media', ['_token' => 'stale-token'], ['Sec-Fetch-Site' => 'same-origin'])
+            ->assertStatus(419)->assertJsonPath('message', 'Open the form again and try once more.');
+
+        for ($i = 0; $i < 20; $i++) {
+            $this->postJson('/media', ['_token' => 'current-token'])->assertUnprocessable()->assertJsonValidationErrors('image');
+        }
+
+        $this->postJson('/media', ['_token' => 'current-token'])->assertTooManyRequests()->assertHeader('Retry-After');
+        $this->assertDatabaseCount('media', 0);
     }
 
     public function test_profile_security_preferences_and_scoped_session_revocation(): void

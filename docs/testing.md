@@ -7,6 +7,7 @@ The current [PHPUnit configuration](../phpunit.xml) uses SQLite in memory and ar
 | Unit and feature suite | composer test |
 | Focused behavior | php artisan test --filter=TestName --no-interaction |
 | Static analysis | composer analyse |
+| Upload progress, cancellation and response handling with simulated XHR | node --test tests/js/media-upload.test.mjs |
 | Formatting | vendor/bin/pint --test (Windows: vendor/bin/pint.bat --test) |
 | Clean release build | npm ci, then npm run build |
 | Routes | php artisan route:list --no-interaction |

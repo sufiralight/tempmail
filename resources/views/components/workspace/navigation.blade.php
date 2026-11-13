@@ -16,6 +16,7 @@
         @if(auth()->user()->can($permission) && ($permission === 'dashboard.view' || auth()->user()->hasVerifiedEmail()))
             @continue($route === 'verification.notice' && auth()->user()->hasVerifiedEmail())
             @php($current = match ($route) {
+                'admin' => request()->routeIs('admin'),
                 'media.index' => request()->routeIs('media.*'),
                 'admin.media.index' => request()->routeIs('admin.media.*'),
                 default => request()->routeIs($route, $route.'.*'),

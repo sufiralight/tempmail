@@ -15,3 +15,5 @@ The shared error view handles 403, 404, 419, 429, 500 and 503 without querying t
 HTTP exception reports include the exception class, route name and a coarse failure category. They exclude exception text, SQL and request context. Database connection and recognizable missing-schema failures return 503. For an affected administrative route, review the release migration status and apply pending migrations through the controlled deployment process. Ordinary requests never apply migrations.
 
 Responses include nosniff, no-referrer, a restricted Permissions-Policy and CSP frame restrictions. The media picker permits same-origin framing. HSTS requires production, an HTTPS APP_URL and a secure request under Laravel's existing proxy configuration. CSP leaves script execution unchanged for the current Alpine and Vite integration.
+
+Boost browser log collection is disabled in application configuration in every environment. The package watcher captures full URLs and arbitrary console arguments without application-specific redaction. Local developers can use browser DevTools and normal Laravel logs. Deploy with Composer dev dependencies excluded.

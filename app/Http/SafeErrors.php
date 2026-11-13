@@ -66,10 +66,12 @@ final class SafeErrors
         $messages = [
             403 => ['Access denied', 'You do not have permission to access this page.'],
             404 => ['Page not found', 'The page you are looking for does not exist or has moved.'],
+            413 => ['Request too large', 'Choose a smaller file and try again.'],
             419 => ['Session expired', 'Open the form again and try once more.'],
             429 => ['Too many requests', 'Please wait before trying again.'],
             500 => ['Something went wrong', 'We could not complete your request. Please try again later.'],
             503 => ['Temporarily unavailable', 'The service is temporarily unavailable. Please try again shortly.'],
+            507 => ['Storage unavailable', 'The image could not be saved. Try again later.'],
         ];
         if (! isset($messages[$status])) {
             return null;

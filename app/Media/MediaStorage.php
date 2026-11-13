@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use RuntimeException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 final class MediaStorage
@@ -71,7 +71,7 @@ final class MediaStorage
             }
 
             if (! $disk->put($original, $contents) || ($preview !== false && ! $disk->put($key.'.preview.png', $preview))) {
-                throw new RuntimeException('Media storage failed.');
+                throw new HttpException(507);
             }
 
             return DB::transaction(function () use ($owner, $file, $key, $types, $mime, $size, $preview): Media {
