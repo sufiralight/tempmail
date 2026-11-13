@@ -1,13 +1,16 @@
+@php($accountAppearance = auth()->user()?->appearance)
 <script>
     (() => {
         const key = 'tempmail.theme';
         const normalize = value => ['light', 'dark'].includes(value) ? value : 'system';
         const media = window.matchMedia?.('(prefers-color-scheme: dark)');
         let preference = 'system';
+        const accountPreference = @js($accountAppearance);
 
         try {
             preference = normalize(window.localStorage.getItem(key));
         } catch {}
+        if (accountPreference !== null) preference = normalize(accountPreference);
 
         const theme = {
             preference,

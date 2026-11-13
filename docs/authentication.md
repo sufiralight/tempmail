@@ -24,3 +24,15 @@ Registration sends Laravel's signed verification notification using the configur
 Password creation uses AccountPassword for a 12-character minimum, a 1024-character maximum, the bcrypt 72-byte limit when active, and local rejection of a small list of common passwords, simple repeats, and sequences. The feedback component is a local estimate based on length and predictable patterns. It sends no password data and does not check a breach database. Reuse x-ui.password-strength with the IDs of the two shared password fields for future password changes. The server policy applies regardless of the displayed score.
 
 Password recovery serializes broker requests and resets per normalized account using cache locks. The default database broker consumes the token in the same transaction as the password change. Recovery rotates the remember token and invalidates the requesting session. Protected sessions check the password hash on later requests.
+
+## Profile and sessions
+
+Account settings live at /profile, /profile/security, /profile/sessions and /profile/preferences. Profile email changes require the current password, clear verification, revoke other tracked sessions and send verification to the new address. Password changes share the registration policy, remove outstanding reset tokens, rotate the remember token, revoke other tracked sessions and rotate the current session ID. The authenticated user remains signed in.
+
+Laravel keeps its configured session driver. The installer still uses private file sessions. An additive account_sessions registry tracks authenticated requests by keyed session digest, opaque UUID, browser family and coarse last activity. No IP addresses or raw session IDs are recorded. Existing sessions become visible on their next protected request. A revoked session is rejected on its next protected request. Revocation requires the current password and cannot target the current session. The scheduled daily cleanup removes records older than the longer of 24 hours or the configured session lifetime. Run Laravel schedule:run through hosting cron to apply retention.
+
+Appearance, English interface preference and an IANA timezone are stored separately on each account. The saved account theme seeds the shared theme before first paint. The browser preference is the fallback for accounts without a saved theme and guests. The header selector still provides an immediate preview and local preference. Save the Preferences form to make the choice apply on future authenticated page loads. Account activity uses the selected timezone.
+
+Security notices use the configured direct mail transport. Profile and security events reuse the shared audit writer and contain only event names, actor and target IDs and, for revocations, the count. The profile activity query shows only the current account's events. The administrative audit viewer retains its existing access controls.
+
+Apply the additive account preferences and session migration during the controlled release before enabling authenticated routes on existing deployments.

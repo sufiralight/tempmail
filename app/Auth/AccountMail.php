@@ -6,6 +6,7 @@ use App\Models\User;
 use Closure;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Throwable;
 
@@ -19,6 +20,11 @@ final class AccountMail
     public function sendVerification(User $user): bool
     {
         return $this->deliver(static fn () => $user->notify(new VerifyEmail));
+    }
+
+    public function sendSecurityNotice(string $address, string $message): void
+    {
+        $this->deliver(static fn () => Notification::route('mail', $address)->notify(new AccountSecurityNotice($message)));
     }
 
     private function deliver(Closure $send): bool

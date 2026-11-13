@@ -5,11 +5,13 @@ use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\InstallerAdminController;
 use App\Http\Controllers\InstallerController;
 use App\Http\Controllers\PasswordRecoveryController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkspaceAdminController;
 use App\Http\Middleware\BeginDatabaseVerification;
 use App\Http\Middleware\RequireActiveAccount;
 use App\Http\Middleware\RequireVerifiedInstallation;
 use App\Http\Middleware\ThrottleInstallation;
+use App\Http\Middleware\TrackAccountSession;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/install', [InstallerController::class, 'show'])->name('install.database');
@@ -38,7 +40,7 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/reset-password', [PasswordRecoveryController::class, 'reset'])->middleware('throttle:password-recovery');
 });
 
-Route::middleware(['auth', 'auth.session', RequireActiveAccount::class])->group(function (): void {
+Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAccountSession::class])->group(function (): void {
     Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
     Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
         ->middleware(['signed:relative', 'throttle:6,1'])->name('verification.verify');
@@ -46,6 +48,19 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class])->group(
         ->middleware('throttle:verification-resend')->name('verification.send');
     Route::post('/logout', [AccountController::class, 'logout'])->name('logout');
     Route::view('/dashboard', 'workspace.dashboard')->middleware('can:dashboard.view')->name('dashboard');
+    Route::prefix('profile')->name('profile.')->group(function (): void {
+        Route::get('/', [ProfileController::class, 'show'])->name('show');
+        Route::get('/security', [ProfileController::class, 'security'])->name('security');
+        Route::get('/sessions', [ProfileController::class, 'sessions'])->name('sessions');
+        Route::get('/preferences', [ProfileController::class, 'preferences'])->name('preferences');
+        Route::middleware('throttle:10,1')->group(function (): void {
+            Route::patch('/', [ProfileController::class, 'update'])->name('update');
+            Route::patch('/password', [ProfileController::class, 'password'])->name('password');
+            Route::patch('/preferences', [ProfileController::class, 'savePreferences'])->name('preferences.update');
+            Route::delete('/sessions/{session}', [ProfileController::class, 'revoke'])->whereUuid('session')->name('sessions.revoke');
+            Route::post('/sessions/revoke-others', [ProfileController::class, 'revoke'])->name('sessions.revoke-others');
+        });
+    });
     Route::prefix('admin')->middleware(['can:admin.access', 'verified'])->group(function (): void {
         Route::get('/', [WorkspaceAdminController::class, 'overview'])->name('admin');
         Route::get('/users', [WorkspaceAdminController::class, 'users'])->middleware('can:users.view')->name('admin.users');

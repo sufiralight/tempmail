@@ -1,6 +1,8 @@
 <nav aria-label="Workspace navigation" class="grid gap-1">
     @php($items = [
         ['dashboard', 'Dashboard', 'dashboard.view'],
+        ['profile.show', 'Profile', 'dashboard.view'],
+        ['profile.security', 'Security', 'dashboard.view'],
         ['verification.notice', 'Email security', 'dashboard.view'],
         ['admin', 'Overview', 'admin.access'],
         ['admin.users', 'Users', 'users.view'],

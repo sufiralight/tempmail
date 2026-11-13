@@ -2,19 +2,64 @@
 
 namespace Tests\Feature;
 
+use App\Auth\AccountSessions;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class AuthenticationTest extends TestCase
 {
+    public function test_profile_security_preferences_and_scoped_session_revocation(): void
+    {
+        $password = 'Fixture current password 42';
+        $user = User::factory()->create(['password' => $password]);
+        $other = User::factory()->create();
+        $this->get('/profile')->assertRedirect('/login');
+        $this->actingAs($user)->get('/profile')->assertOk()->assertSee('Personal information');
+        $this->patch('/profile', ['name' => 'New name', 'email' => $other->email, 'current_password' => $password])->assertSessionHasErrors('email');
+        $this->patch('/profile', ['name' => 'New name', 'email' => 'new@example.test', 'role' => 'admin'])->assertSessionHasErrors('role');
+        $this->patch('/profile', ['name' => 'New name', 'email' => 'new@example.test'])->assertSessionHasErrors('current_password');
+        $this->patch('/profile', ['name' => 'New name', 'email' => 'new@example.test', 'current_password' => $password])->assertRedirect('/profile');
+        $this->assertNull($user->fresh()->email_verified_at);
+        $this->assertFalse($user->fresh()->isSuperAdmin());
+        $this->patch('/profile/preferences', ['appearance' => 'dark', 'interface_locale' => 'xx', 'timezone' => 'invalid'])->assertSessionHasErrors(['interface_locale', 'timezone']);
+        $this->patch('/profile/preferences', ['appearance' => 'dark', 'interface_locale' => 'en', 'timezone' => 'Europe/Istanbul'])->assertRedirect('/profile/preferences');
+        $this->assertSame('dark', $user->fresh()->appearance);
+        $page = $this->actingAs($user->fresh())->get('/profile/security')->assertOk()->assertSee('profile-strength')->assertSee('data-page-progress-root');
+        $this->withUnencryptedCookie(config('session.cookie'), $page->getCookie(config('session.cookie'), false)->getValue());
+        $current = DB::table('account_sessions')
+            ->where('digest', app(AccountSessions::class)->digest($page->baseRequest))->first();
+        $db = DB::table('account_sessions');
+        foreach ([$user, $other, $user] as $index => $account) {
+            $ids[$index] = (string) Str::uuid();
+            $db->insert(['id' => $ids[$index], 'user_id' => $account->id, 'digest' => hash('sha256', $ids[$index]), 'device' => 'Fixture browser', 'last_seen' => now()->timestamp]);
+        }
+        $this->get('/profile/sessions')->assertOk()->assertSee('Current session')->assertDontSee($current->digest);
+        $this->delete('/profile/sessions/'.$ids[1], ['current_password' => $password])->assertRedirect('/profile/sessions');
+        $this->assertDatabaseHas('account_sessions', ['id' => $ids[1], 'revoked' => false]);
+        $this->delete('/profile/sessions/'.$ids[0], ['current_password' => $password])->assertRedirect('/profile/sessions');
+        $this->assertDatabaseHas('account_sessions', ['id' => $ids[0], 'revoked' => true]);
+        $this->post('/profile/sessions/revoke-others', ['current_password' => $password])->assertRedirect('/profile/sessions');
+        $this->assertDatabaseHas('account_sessions', ['id' => $ids[2], 'revoked' => true]);
+        $this->assertDatabaseHas('account_sessions', ['id' => $current->id, 'revoked' => false]);
+        $this->travel(1)->minutes();
+        $this->patch('/profile/password', ['current_password' => 'wrong', 'password' => 'Fixture new password 82', 'password_confirmation' => 'Fixture new password 82'])->assertSessionHasErrors('current_password');
+        $before = $user->fresh()->remember_token;
+        $this->patch('/profile/password', ['current_password' => $password, 'password' => 'Fixture new password 82', 'password_confirmation' => 'Fixture new password 82'])->assertRedirect('/profile/security');
+        $this->assertNotSame($before, $user->fresh()->remember_token);
+        $this->assertTrue(Hash::check('Fixture new password 82', $user->fresh()->password));
+        $this->assertDatabaseHas('administrative_audits', ['action' => 'account.password_changed', 'target_id' => $user->id, 'metadata' => '[]']);
+    }
+
     use RefreshDatabase;
 
     private string $workspace;

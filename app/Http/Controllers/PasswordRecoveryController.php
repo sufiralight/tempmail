@@ -52,6 +52,8 @@ final class PasswordRecoveryController extends Controller
                 static fn () => Password::reset($request->safe()->only(['email', 'password', 'password_confirmation', 'token']),
                     function (User $user, #[\SensitiveParameter] string $password): void {
                         $user->forceFill(['password' => $password, 'remember_token' => Str::random(60)])->save();
+                        DB::table('account_sessions')->where('user_id', $user->id)->where('revoked', false)
+                            ->update(['revoked' => true, 'last_seen' => now()->timestamp]);
                         DB::afterCommit(static fn () => event(new PasswordReset($user)));
                     }),
             ));

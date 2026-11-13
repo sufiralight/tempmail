@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Auth\AccountSessions;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterAccount;
 use App\Models\User;
@@ -37,6 +38,7 @@ final class AccountController extends Controller
         }
 
         $request->session()->regenerate();
+        $request->session()->put('password_hash_web', Auth::guard('web')->hashPasswordForCookie($request->user()->getAuthPassword()));
         $intended = $request->session()->pull('url.intended');
         $user = $request->user();
         if ($user instanceof User && is_string($intended)) {
@@ -76,13 +78,15 @@ final class AccountController extends Controller
         event(new Registered($user));
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put('password_hash_web', Auth::guard('web')->hashPasswordForCookie($user->getAuthPassword()));
         $request->session()->forget('url.intended');
 
         return new RedirectResponse('/dashboard');
     }
 
-    public function logout(Request $request): RedirectResponse
+    public function logout(Request $request, AccountSessions $sessions): RedirectResponse
     {
+        $sessions->retire($request);
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
