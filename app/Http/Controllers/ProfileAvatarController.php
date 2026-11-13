@@ -32,7 +32,7 @@ final class ProfileAvatarController extends Controller
     {
         $avatar->change($request->user(), null);
 
-        return redirect()->route('profile.show')->with('status', 'Profile photo removed.');
+        return redirect()->route('profile.show')->with('status', 'Avatar removed. The image remains in your Media Library.');
     }
 
     public function show(Request $request, int $mediaId, ProfileAvatar $avatar): StreamedResponse

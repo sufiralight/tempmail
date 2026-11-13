@@ -67,6 +67,9 @@ Alpine.data('mediaUpload', () => ({
             this.request = null;
             this.busy = false;
             input.value = '';
+            if (form.dataset?.editSingle && this.entries.length === 1 && this.entries[0].details) {
+                location.assign(this.entries[0].details);
+            }
         }
     },
 
@@ -110,8 +113,12 @@ Alpine.data('mediaUpload', () => ({
                 entry.state = uploadResult(xhr);
                 if (xhr.status === 201) {
                     try {
-                        const {id} = JSON.parse(xhr.responseText);
-                        if (Number.isSafeInteger(id) && id > 0) entry.id = id;
+                        const {id, filename, details} = JSON.parse(xhr.responseText);
+                        if (Number.isSafeInteger(id) && id > 0) {
+                            entry.id = id;
+                            if (typeof filename === 'string') entry.name = filename;
+                            if (details === '/media/' + id) entry.details = details;
+                        }
                     } catch {}
                 }
                 if (![201, 413, 422].includes(xhr.status)) this.stopped = true;

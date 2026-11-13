@@ -78,23 +78,41 @@ final class MediaStorage
             }
 
             return DB::transaction(function () use ($owner, $file, $key, $types, $mime, $size, $preview): Media {
+                $this->lockWorkspace();
+                $originalName = mb_substr(preg_replace('/[[:cntrl:]]/u', '', basename(str_replace('\\', '/', $file->getClientOriginalName()))) ?: 'Image', 0, 255);
                 $media = new Media;
                 $media->forceFill([
                     'user_id' => $owner->id, 'storage_key' => $key,
-                    'filename' => Str::limit(preg_replace('/[[:cntrl:]]/u', '', basename(str_replace('\\', '/', $file->getClientOriginalName()))) ?: 'Image', 240, ''),
+                    'filename' => $this->displayFilename($owner, $originalName, $types[$mime]),
+                    'original_filename' => $originalName,
                     'mime' => $mime, 'extension' => $types[$mime], 'bytes' => $file->getSize(),
                     'width' => $size[0], 'height' => $size[1], 'thumbnail' => $preview !== false,
                 ])->save();
                 $this->audit->record($owner, 'media.uploaded', 'media', $media->id);
 
                 return $media;
-            });
+            }, 3);
         } catch (Throwable $exception) {
             if (! Media::withTrashed()->where('storage_key', $key)->exists()) {
                 $disk->delete([$original, $key.'.preview.png']);
             }
             throw $exception;
         }
+    }
+
+    private function displayFilename(User $owner, string $original, string $extension): string
+    {
+        $suffix = preg_match('/\.(jpe?g|png|webp|gif)$/i', $original, $matches) ? $matches[1] : $extension;
+        $stem = pathinfo($original, PATHINFO_FILENAME) ?: 'Image';
+        $name = mb_substr($stem, 0, 240 - strlen($suffix) - 1).'.'.$suffix;
+        $query = Media::withTrashed()->where('user_id', $owner->id);
+        $base = preg_replace('/-\d+$/u', '', $stem) ?: $stem;
+
+        for ($number = 2; (clone $query)->where('filename', $name)->exists(); $number++) {
+            $name = mb_substr($base, 0, 240 - strlen((string) $number) - strlen($suffix)).'-'.$number.'.'.$suffix;
+        }
+
+        return $name;
     }
 
     public const int MAX_SELECTION = 100;

@@ -91,6 +91,23 @@ class AuthenticationTest extends TestCase
         $this->assertDatabaseHas('administrative_audits', ['action' => 'media.permanently_deleted', 'target_id' => $id]);
     }
 
+    public function test_upload_display_names_are_owner_scoped_and_storage_keys_are_distinct(): void
+    {
+        Storage::fake('media');
+        $owner = User::factory()->create();
+        $this->actingAs($owner);
+        foreach (['photo.png', 'photo-2.png', 'photo-3.png'] as $index => $display) {
+            $response = $this->postJson('/media', ['image' => UploadedFile::fake()->image($index === 2 ? 'photo-2.png' : 'photo.png')])
+                ->assertCreated()->assertJsonPath('filename', $display);
+            $id = $response->json('id');
+            $response->assertJsonPath('details', "/media/{$id}");
+            $this->assertDatabaseHas('media', ['id' => $id, 'filename' => $display, 'original_filename' => $index === 2 ? 'photo-2.png' : 'photo.png']);
+        }
+        $this->assertCount(3, Media::query()->distinct()->pluck('storage_key'));
+        $this->actingAs(User::factory()->create())->postJson('/media', ['image' => UploadedFile::fake()->image('photo.png')])
+            ->assertCreated()->assertJsonPath('filename', 'photo.png');
+    }
+
     public function test_media_pagination_and_bulk_selection_are_owner_scoped(): void
     {
         Storage::fake('media');

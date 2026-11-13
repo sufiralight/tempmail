@@ -1,5 +1,6 @@
 @props(['picker' => false, 'avatar' => false])
 <form method="post" action="{{ route('media.store') }}" enctype="multipart/form-data" data-page-progress="off"
+    @unless($picker) data-edit-single="1" @endunless
     x-data="mediaUpload" @submit.prevent="upload($el)" @dragover.prevent="dragging = true" @dragleave="dragging = false"
     @drop.prevent="drop($event, $refs.files)" :class="{ 'ring-2 ring-focus': dragging }" class="grid gap-3 rounded-ui border border-border p-4">
     @csrf
@@ -18,7 +19,7 @@
             <progress max="100" :value="entry.progress" x-show="entry.state === 'Uploading'" :aria-label="'Uploading ' + entry.name"></progress>
             <span x-text="entry.state"></span>
             @unless($picker)
-                <a x-show="entry.id" :href="entry.id ? '/media/' + entry.id : null" class="ms-1 underline underline-offset-4">View uploaded item</a>
+                <a x-show="entry.id" :href="entry.id ? '/media/' + entry.id : null" class="ms-1 underline underline-offset-4">Edit image details</a>
             @else
                 <a x-show="entry.id && !entry.visible" :href="entry.id ? '/media/picker?sort=newest{{ $avatar ? '&avatar=1' : '' }}' : null"
                     class="ms-1 underline underline-offset-4">Browse newest images</a>

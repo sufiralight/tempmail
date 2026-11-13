@@ -3,7 +3,7 @@
     <x-ui.card :title="$media->filename" class="break-words">
         <x-ui.image-preview :src="route($admin ? 'admin.media.file' : 'media.file', $media)" :alt="$media->alt_text ?? ''" />
         <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-            <div><dt class="ui-help">Original filename</dt><dd>{{ $media->filename }}</dd></div>
+            <div><dt class="ui-help">Original filename</dt><dd>{{ $media->original_filename ?? $media->filename }}</dd></div>
             <div><dt class="ui-help">MIME type</dt><dd>{{ $media->mime }}</dd></div>
             <div><dt class="ui-help">File format</dt><dd>{{ strtoupper($media->extension) }}</dd></div>
             <div><dt class="ui-help">File size</dt><dd>{{ number_format($media->bytes) }} bytes</dd></div>
@@ -19,7 +19,11 @@
     </x-ui.card>
     @unless($admin)
     <x-ui.card title="Image SEO metadata">
-        <form method="post" action="{{ route('media.update', $media) }}" class="grid gap-3">
+        <form method="post" action="{{ route('media.update', $media) }}" class="grid gap-3"
+            x-data="{ dirty: false, initial: null }" x-init="initial = JSON.stringify([...new FormData($el)])"
+            @input="dirty = JSON.stringify([...new FormData($el)]) !== initial"
+            @submit="dirty = false"
+            @beforeunload.window="if (dirty) { $event.preventDefault(); $event.returnValue = true }">
             @csrf
             @method('PATCH')
             <x-ui.input name="title" label="Image title" :value="old('title', $media->title)" maxlength="255" />

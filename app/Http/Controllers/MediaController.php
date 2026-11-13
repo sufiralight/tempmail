@@ -37,7 +37,7 @@ final class MediaController extends Controller
         $collectionTotal = ! $picker && ($hasSearch || $hasType) ? (clone $query)->count() : null;
         if ($hasSearch) {
             $pattern = '%'.$filters['q'].'%';
-            $query->where(fn ($items) => $items->whereLike('filename', $pattern)->orWhereLike('title', $pattern));
+            $query->where(fn ($items) => $items->whereLike('filename', $pattern)->orWhereLike('title', $pattern)->orWhereLike('alt_text', $pattern));
         }
         if ($hasType) {
             $query->where('extension', $filters['type']);
@@ -100,8 +100,10 @@ final class MediaController extends Controller
     {
         $media = $storage->store($request->user(), $request->file('image'));
 
-        return $request->expectsJson() ? response()->json(['id' => $media->id], 201)
-            : redirect()->route($request->boolean('picker') ? 'media.picker' : 'media.index', $request->boolean('picker') && $request->boolean('avatar') ? ['avatar' => 1] : [])->with('status', 'Image uploaded.');
+        return $request->expectsJson() ? response()->json(['id' => $media->id, 'filename' => $media->filename, 'details' => route('media.show', $media, absolute: false)], 201)
+            : ($request->boolean('picker')
+                ? redirect()->route('media.picker', $request->boolean('avatar') ? ['avatar' => 1] : [])
+                : redirect()->route('media.show', $media))->with('status', 'Image uploaded.');
     }
 
     public function update(Request $request, Media $media)
