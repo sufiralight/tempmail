@@ -10,6 +10,9 @@
                     @if($user->hasVerifiedEmail())
                         <x-ui.badge>Verified</x-ui.badge>
                     @else
+                        @can('admin.access')
+                            <p class="ui-help mb-1">Verify your email to access Admin Console.</p>
+                        @endcan
                         <a class="underline underline-offset-4" href="{{ route('verification.notice', absolute: false) }}">Verify email</a>
                     @endif
                 </dd>
@@ -17,14 +20,4 @@
         </dl>
     </x-ui.card>
 
-    <x-ui.card title="Quick actions">
-        <div class="grid gap-2 sm:grid-cols-2">
-            <x-ui.button :href="route('profile.show', absolute: false)" icon="user" variant="outline" class="justify-start!">Manage profile</x-ui.button>
-            <x-ui.button :href="route('profile.security', absolute: false)" icon="shield" variant="outline" class="justify-start!">Account security</x-ui.button>
-            <x-ui.button :href="route('media.index', absolute: false)" icon="image" variant="outline" class="justify-start!">Media Library</x-ui.button>
-            @if($user->hasVerifiedEmail() && $user->can('admin.access'))
-                <x-ui.button :href="route('admin', absolute: false)" icon="settings" variant="outline" class="justify-start!">Admin Console</x-ui.button>
-            @endif
-        </div>
-    </x-ui.card>
 </x-layouts.workspace>

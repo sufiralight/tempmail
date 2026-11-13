@@ -71,29 +71,33 @@ class AuthenticationTest extends TestCase
         $this->actingAs($member)->get('/dashboard')->assertOk()
             ->assertSee('Account overview')->assertSee('Open workspace navigation')
             ->assertSee('Account menu')->assertSee('Email verification')
-            ->assertDontSee('Temporary inbox')->assertDontSee('Admin Console');
+            ->assertSee($member->email)->assertSee('My Profile')->assertSee('Preferences')
+            ->assertDontSee('Temporary inbox')->assertDontSee('Quick actions')->assertDontSee('Admin Console');
         $this->get('/admin')->assertForbidden();
 
         foreach ([
             '/dashboard' => '/dashboard',
-            '/profile' => '/profile',
-            '/profile/security' => '/profile/security',
-            '/profile/sessions' => '/profile/sessions',
-            '/profile/preferences' => '/profile/preferences',
-            '/email/verify' => '/email/verify',
+            '/profile' => null,
+            '/profile/security' => null,
+            '/profile/sessions' => null,
+            '/profile/preferences' => null,
+            '/email/verify' => null,
             '/media' => '/media',
         ] as $page => $active) {
-            $this->assertActiveNavigation($page, $active);
+            $this->assertActiveNavigation($page, $active, ['/dashboard', '/media']);
         }
 
         $admin = User::factory()->create(['is_super_admin' => true]);
-        $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('Admin Console')->assertSee('Media audit');
+        $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('Admin Console')->assertDontSee('Media audit');
+        $this->assertActiveNavigation('/dashboard', '/dashboard', ['/dashboard', '/media', '/admin']);
+        $this->get('/admin')->assertOk()->assertSee('Admin Overview')->assertSee('Media audit');
         $admin->forceFill(['email_verified_at' => null])->save();
-        $this->actingAs($admin)->get('/dashboard')->assertOk()->assertDontSee('Admin Console');
+        $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('Verify your email to access Admin Console.')
+            ->assertDontSee('href="/admin"', false);
         $this->get('/admin')->assertRedirect('/email/verify');
     }
 
-    private function assertActiveNavigation(string $page, string $active): void
+    private function assertActiveNavigation(string $page, ?string $active, ?array $destinations = null): void
     {
         $html = $this->get($page)->assertOk()->getContent();
         preg_match_all('/<nav aria-label="Workspace navigation".*?<\/nav>/s', $html, $menus);
@@ -101,8 +105,14 @@ class AuthenticationTest extends TestCase
 
         foreach ($menus[0] as $menu) {
             preg_match_all('/<a\b[^>]*aria-current="page"[^>]*>/s', $menu, $links);
-            $this->assertCount(1, $links[0]);
-            $this->assertStringContainsString('href="'.$active.'"', $links[0][0]);
+            $this->assertCount($active === null ? 0 : 1, $links[0]);
+            if ($active !== null) {
+                $this->assertStringContainsString('href="'.$active.'"', $links[0][0]);
+            }
+            if ($destinations !== null) {
+                preg_match_all('/<a\b[^>]*href="([^"]+)"/', $menu, $hrefs);
+                $this->assertSame($destinations, $hrefs[1]);
+            }
         }
     }
 

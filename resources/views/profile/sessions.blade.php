@@ -1,4 +1,5 @@
 <x-workspace.profile title="Active sessions" description="Review browser sessions and sign out devices you no longer use.">
+    <x-ui.button :href="route('profile.security', absolute: false)" icon="arrow-left" variant="ghost" size="sm">Back to security</x-ui.button>
     <x-ui.card>
         <ul class="divide-y divide-border">
             @foreach($sessions as $entry)

@@ -2,8 +2,8 @@
     <x-ui.card title="Verification and sessions">
         <div class="flex flex-wrap items-center gap-3">
             <x-ui.badge>{{ auth()->user()->hasVerifiedEmail() ? 'Email verified' : 'Verification pending' }}</x-ui.badge>
-            @unless(auth()->user()->hasVerifiedEmail())<x-ui.button href="/email/verify" variant="outline">Verify email</x-ui.button>@endunless
-            <x-ui.button href="/profile/sessions" variant="ghost">Active sessions ({{ $sessionCount }})</x-ui.button>
+            @unless(auth()->user()->hasVerifiedEmail())<x-ui.button :href="route('verification.notice', absolute: false)" variant="outline">Verify email</x-ui.button>@endunless
+            <x-ui.button :href="route('profile.sessions', absolute: false)" variant="ghost">Active sessions ({{ $sessionCount }})</x-ui.button>
         </div>
     </x-ui.card>
     <x-ui.card title="Change password" description="Changing your password signs out your other sessions.">
