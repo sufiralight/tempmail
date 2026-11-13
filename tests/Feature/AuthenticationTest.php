@@ -26,27 +26,35 @@ class AuthenticationTest extends TestCase
         $owner = User::factory()->create();
         $owner->forceFill(['is_super_admin' => true])->save();
         $other = User::factory()->create();
+        $this->get('/media')->assertRedirect('/login');
         $this->get('/media-library')->assertRedirect('/login');
-        $this->actingAs($owner)->get('/media-library')->assertOk()->assertSee('Media Library');
-        $this->postJson('/media-library', ['image' => UploadedFile::fake()->createWithContent('bad.svg', '<svg/>')])
+        $this->actingAs($owner)->get('/media')->assertOk()->assertSee('Media Library');
+        $this->postJson('/media', ['image' => UploadedFile::fake()->createWithContent('bad.svg', '<svg/>')])
             ->assertUnprocessable();
-        $response = $this->postJson('/media-library', ['image' => UploadedFile::fake()->image('fixture.png', 12, 14)])
+        $response = $this->postJson('/media', ['image' => UploadedFile::fake()->image('fixture.png', 12, 14)])
             ->assertCreated();
         $id = $response->json('id');
-        $this->get('/media-library/picker')->assertOk()->assertHeader('X-Frame-Options', 'SAMEORIGIN')->assertSee('fixture.png');
-        $this->get("/media-library/{$id}/file?preview=1")->assertOk()->assertHeader('Content-Type', 'image/png');
-        $this->patch("/media-library/{$id}", ['title' => 'New title', 'alt_text' => 'Sample'])->assertRedirect();
-        $this->actingAs($other)->get("/media-library/{$id}/file")->assertForbidden();
-        $this->get('/media-library/picker')->assertOk()->assertDontSee('fixture.png');
+        $this->get('/media/picker')->assertOk()->assertHeader('X-Frame-Options', 'SAMEORIGIN')->assertSee('fixture.png');
+        $this->get("/media/{$id}/file?preview=1")->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->patch("/media/{$id}", ['title' => 'New title', 'alt_text' => 'Sample'])->assertRedirect();
+        $this->patch("/media-library/{$id}", ['title' => 'Legacy edit'])->assertRedirect("/media/{$id}");
+        $this->assertDatabaseHas('media', ['id' => $id, 'title' => 'Legacy edit', 'alt_text' => 'Sample']);
+        $this->actingAs($other)->get("/media/{$id}/file")->assertForbidden();
+        $this->get('/media/picker')->assertOk()->assertDontSee('fixture.png');
         $this->get('/admin/settings/branding')->assertForbidden();
+        $this->get('/admin/media')->assertForbidden();
+        $this->get("/media-library/{$id}")->assertForbidden();
+        $this->actingAs($owner)->get('/media-library/picker?q=fixture')->assertRedirect('/media/picker?q=fixture');
+        $this->get('/admin/media')->assertOk()->assertSee('Legacy edit');
+        $this->get("/admin/media/{$id}")->assertOk()->assertDontSee('Save details');
         $this->actingAs($owner)->get('/admin/settings/branding')->assertOk()->assertSee('Choose image');
         $branding = ['logo' => $id, 'dark-logo' => $id, 'favicon' => null, 'social' => null];
         $this->patch('/admin/settings/branding', $branding)->assertRedirect();
         $this->get('/dashboard')->assertOk()->assertSee('/branding/logo')->assertSee('/branding/dark-logo');
         $this->get('/branding/logo')->assertOk();
-        $this->delete("/media-library/{$id}")->assertSessionHasErrors('media');
+        $this->delete("/media/{$id}")->assertSessionHasErrors('media');
         $this->patch('/admin/settings/branding', array_fill_keys(array_keys($branding), null))->assertRedirect();
-        $this->post('/media-library/bulk-delete', ['items' => [$id]])->assertRedirect();
+        $this->post('/media/bulk-delete', ['items' => [$id]])->assertRedirect();
         $this->assertDatabaseMissing('media', ['id' => $id]);
         $this->assertDatabaseHas('administrative_audits', ['action' => 'media.bulk_deleted', 'target_id' => $id]);
     }

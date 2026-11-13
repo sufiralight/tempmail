@@ -1,9 +1,10 @@
 <x-layouts.workspace title="Image details">
-    <x-ui.button :href="route('media.index')" variant="ghost">Back to Media Library</x-ui.button>
+    <x-ui.button :href="route($admin ? 'admin.media.index' : 'media.index')" variant="ghost">Back to Media Library</x-ui.button>
     <x-ui.card :title="$media->filename" class="break-words">
-        <x-ui.image-preview :src="route('media.file', $media)" :alt="$media->alt_text ?? ''" />
+        <x-ui.image-preview :src="route($admin ? 'admin.media.file' : 'media.file', $media)" :alt="$media->alt_text ?? ''" />
         <p class="ui-help mt-3">{{ $media->mime }} · {{ $media->width }} × {{ $media->height }} · {{ number_format($media->bytes) }} bytes · {{ $media->created_at->toDateString() }}</p>
     </x-ui.card>
+    @unless($admin)
     <x-ui.card title="Metadata">
         <form method="post" action="{{ route('media.update', $media) }}" class="grid gap-3">
             @csrf
@@ -21,4 +22,5 @@
             </form>
         </x-ui.modal>
     </x-ui.card>
+    @endunless
 </x-layouts.workspace>

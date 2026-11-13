@@ -14,7 +14,7 @@ enum WorkspaceRole: string
         return match ($this) {
             self::User => ['dashboard.view'],
             self::Admin => ['dashboard.view', 'admin.access', 'users.view', 'settings.view'],
-            self::SuperAdmin => ['dashboard.view', 'admin.access', 'users.view', 'users.manage', 'roles.manage', 'settings.view', 'settings.manage', 'audit.view'],
+            self::SuperAdmin => ['dashboard.view', 'admin.access', 'users.view', 'users.manage', 'roles.manage', 'settings.view', 'settings.manage', 'audit.view', 'media.audit'],
         };
     }
 

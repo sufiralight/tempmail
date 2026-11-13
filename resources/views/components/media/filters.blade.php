@@ -1,5 +1,5 @@
-@props(['filters', 'picker' => false])
-<form method="get" action="{{ route($picker ? 'media.picker' : 'media.index') }}" class="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3">
+@props(['filters', 'picker' => false, 'admin' => false])
+<form method="get" action="{{ route($picker ? 'media.picker' : ($admin ? 'admin.media.index' : 'media.index')) }}" class="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-3">
     <x-ui.input name="q" label="Search images" type="search" :value="$filters['q'] ?? null" maxlength="100" />
     <x-ui.select name="type" label="File type">
         <option value="">All types</option>

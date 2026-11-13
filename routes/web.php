@@ -50,7 +50,7 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         ->middleware('throttle:verification-resend')->name('verification.send');
     Route::post('/logout', [AccountController::class, 'logout'])->name('logout');
     Route::view('/dashboard', 'workspace.dashboard')->middleware('can:dashboard.view')->name('dashboard');
-    Route::prefix('media-library')->name('media.')->controller(MediaController::class)->group(function (): void {
+    Route::prefix('media')->name('media.')->controller(MediaController::class)->group(function (): void {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->middleware('throttle:20,1')->name('store');
         Route::get('/picker', 'index')->name('picker');
@@ -59,6 +59,16 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         Route::get('/{media}', 'show')->whereNumber('media')->name('show');
         Route::patch('/{media}', 'update')->whereNumber('media')->name('update');
         Route::delete('/{media}', 'destroy')->whereNumber('media')->middleware('throttle:10,1')->name('destroy');
+    });
+    Route::prefix('media-library')->controller(MediaController::class)->group(function (): void {
+        Route::get('/', 'legacyIndex');
+        Route::get('/picker', 'legacyPicker');
+        Route::get('/{media}/file', 'legacyFile')->whereNumber('media');
+        Route::get('/{media}', 'legacyShow')->whereNumber('media');
+        Route::post('/', 'store')->middleware('throttle:20,1');
+        Route::post('/bulk-delete', 'bulkDelete')->middleware('throttle:10,1');
+        Route::patch('/{media}', 'update')->whereNumber('media');
+        Route::delete('/{media}', 'destroy')->whereNumber('media')->middleware('throttle:10,1');
     });
     Route::prefix('profile')->name('profile.')->group(function (): void {
         Route::get('/', [ProfileController::class, 'show'])->name('show');
@@ -74,6 +84,9 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         });
     });
     Route::prefix('admin')->middleware(['can:admin.access', 'verified'])->group(function (): void {
+        Route::get('/media', [MediaController::class, 'index'])->middleware('can:media.audit')->name('admin.media.index');
+        Route::get('/media/{media}', [MediaController::class, 'show'])->whereNumber('media')->middleware('can:media.audit')->name('admin.media.show');
+        Route::get('/media/{media}/file', [MediaController::class, 'file'])->whereNumber('media')->middleware('can:media.audit')->name('admin.media.file');
         Route::get('/settings/branding', [BrandingController::class, 'show'])->middleware('can:settings.manage')->name('admin.branding');
         Route::patch('/settings/branding', [BrandingController::class, 'update'])->middleware(['can:settings.manage', 'throttle:10,1'])->name('admin.branding.update');
         Route::get('/', [WorkspaceAdminController::class, 'overview'])->name('admin');

@@ -75,7 +75,7 @@ Alpine.data('mediaPicker', () => ({
             const frame = this.$el.querySelector('dialog[open] iframe');
             if (!frame || event.origin !== location.origin || event.source !== frame.contentWindow
                 || event.data?.type !== 'tempmail-media' || !/^\d+$/.test(event.data.id)) return;
-            const expected = '/media-library/' + event.data.id + '/file?preview=1';
+            const expected = '/media/' + event.data.id + '/file?preview=1';
             if (event.data.preview !== expected) return;
             this.$refs.selection.value = event.data.id;
             this.preview = expected;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UploadMedia;
 use App\Media\MediaStorage;
 use App\Models\Media;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
@@ -16,7 +17,11 @@ final class MediaController extends Controller
     public function index(Request $request): Response
     {
         $filters = $request->validate(['q' => 'nullable|string|max:100', 'type' => 'nullable|in:jpg,png,webp,gif', 'sort' => 'nullable|in:newest,oldest,name,size', 'layout' => 'nullable|in:grid,list']);
-        $query = Media::query()->where('user_id', $request->user()->id);
+        $admin = $request->routeIs('admin.media.index');
+        $query = Media::query();
+        if (! $admin) {
+            $query->where('user_id', $request->user()->id);
+        }
         if (! empty($filters['q'])) {
             $pattern = '%'.$filters['q'].'%';
             $query->where(fn ($items) => $items->whereLike('filename', $pattern)->orWhereLike('title', $pattern));
@@ -32,15 +37,40 @@ final class MediaController extends Controller
         };
 
         return response()->view($request->routeIs('media.picker') ? 'media.picker' : 'media.index', [
-            'items' => $query->orderBy('id')->paginate(20)->appends($filters), 'filters' => $filters,
-        ], 200, ['Content-Security-Policy' => "frame-ancestors 'self'"]);
+            'items' => $query->orderBy('id')->paginate(20)->appends($filters), 'filters' => $filters, 'admin' => $admin,
+        ]);
     }
 
-    public function show(Media $media): View
+    public function legacyIndex(Request $request): RedirectResponse
+    {
+        return redirect()->route('media.index', $request->only(['q', 'type', 'sort', 'layout', 'page']));
+    }
+
+    public function legacyPicker(Request $request): RedirectResponse
+    {
+        return redirect()->route('media.picker', $request->only(['q', 'type', 'sort', 'page']));
+    }
+
+    public function legacyShow(Media $media): RedirectResponse
     {
         Gate::authorize('view', $media);
 
-        return view('media.show', compact('media'));
+        return redirect()->route('media.show', $media);
+    }
+
+    public function legacyFile(Request $request, Media $media): RedirectResponse
+    {
+        Gate::authorize('view', $media);
+
+        return redirect()->route('media.file', ['media' => $media, 'preview' => $request->boolean('preview')]);
+    }
+
+    public function show(Request $request, Media $media): View
+    {
+        $admin = $request->routeIs('admin.media.show');
+        Gate::authorize($admin ? 'media.audit' : 'view', $admin ? [] : $media);
+
+        return view('media.show', compact('media', 'admin'));
     }
 
     public function store(UploadMedia $request, MediaStorage $storage)
@@ -77,7 +107,8 @@ final class MediaController extends Controller
 
     public function file(Request $request, Media $media, MediaStorage $storage)
     {
-        Gate::authorize('view', $media);
+        $admin = $request->routeIs('admin.media.file');
+        Gate::authorize($admin ? 'media.audit' : 'view', $admin ? [] : $media);
         $preview = $media->thumbnail && $request->boolean('preview');
         $disk = Storage::disk('media');
         $path = $storage->path($media, $preview);

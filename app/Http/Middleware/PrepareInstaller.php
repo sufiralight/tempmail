@@ -25,7 +25,7 @@ final class PrepareInstaller
             return $this->private(new Response('Branding is unavailable.', 404));
         }
 
-        if ($request->is('setup-complete', 'login', 'register', 'logout', 'forgot-password', 'reset-password', 'reset-password/*', 'email/verify', 'email/verify/*', 'email/verification-notification', 'dashboard', 'admin', 'admin/*', 'profile', 'profile/*', 'media-library', 'media-library/*')) {
+        if ($request->is('setup-complete', 'login', 'register', 'logout', 'forgot-password', 'reset-password', 'reset-password/*', 'email/verify', 'email/verify/*', 'email/verification-notification', 'dashboard', 'admin', 'admin/*', 'profile', 'profile/*', 'media', 'media/*', 'media-library', 'media-library/*')) {
             if (! $this->access->installed() || ! config('app.key') || ! is_file(app()->environmentFilePath())) {
                 if ($request->isMethodSafe() && $this->access->forRequest($request) !== null) {
                     return $this->private(new RedirectResponse('/install'));
