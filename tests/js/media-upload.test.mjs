@@ -87,7 +87,8 @@ test('selection tracks only rendered checkboxes and prevents restoring pending p
         {value: '2', checked: true, dataset: {}},
         {value: '5', checked: false, dataset: {purgePending: '1'}},
     ];
-    selection.$el = {querySelectorAll: () => inputs};
+    selection.$el = inputs[0];
+    selection.$root = {querySelectorAll: () => inputs};
     selection.$refs = {master: {}};
     selection.sync();
     assert.equal(selection.$refs.master.indeterminate, true);

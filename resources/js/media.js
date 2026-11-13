@@ -151,7 +151,7 @@ Alpine.data('mediaSelection', () => ({
     selected: [], canRestore: false, notice: '',
 
     inputs() {
-        return [...this.$el.querySelectorAll('input[type="checkbox"][form="bulk-media"]')];
+        return [...this.$root.querySelectorAll('input[type="checkbox"][form="bulk-media"]')];
     },
 
     sync() {

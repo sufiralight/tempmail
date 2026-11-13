@@ -170,7 +170,7 @@ class AuthenticationTest extends TestCase
         $first = $owner->fresh()->avatar_media_id;
         $this->assertNotNull($first);
         $url = "/profile/avatar/{$first}";
-        $this->get('/profile')->assertOk()->assertSee($url)->assertSee('Remove photo');
+        $this->get('/profile')->assertOk()->assertSee($url)->assertSee('Remove photo')->assertSee('src="'.$url.'" alt="" hidden', false);
         $this->get('/dashboard')->assertOk()->assertSee($url);
         $this->get($url)->assertOk()->assertHeader('Content-Type', 'image/png');
 

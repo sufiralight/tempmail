@@ -44,3 +44,9 @@ These checks cover repository controls and selected integration cases. Live host
 - npm run build, php artisan view:cache --no-interaction, vendor/bin/pint --test and composer analyse -- --memory-limit=512M
 
 No application data, existing private media or environment credentials were changed.
+
+## Final quality gate
+
+Edge headless on a disposable SQLite installation with temporary media storage verified login, two-file upload with automatic collection refresh, selection and clear, bulk Trash and restore, individual restore and permanent deletion, numbered pagination, avatar preview and removal, and role-aware admin navigation. The media page was checked for horizontal overflow at 375, 390, 768, 1024 and 1440 CSS pixels. Mobile drawer Escape and focus return, the account menu, and all three theme controls were exercised. Live mail delivery, target hosting and full accessibility conformance remain deployment checks.
+
+Before opening traffic, verify migration status on the intended connection and apply pending migrations in the controlled deployment. Configure a direct mail transport and verify delivery for the first administrator before relying on Admin Console access.

@@ -7,7 +7,7 @@
     @if($decorative) aria-hidden="true" @else role="img" aria-label="{{ filled($name) ? 'Avatar for '.$name : 'Account avatar' }}" @endif>
     <span aria-hidden="true">{{ $initials }}</span>
     @if($src)
-        <img src="{{ $src }}" alt="" loading="lazy" hidden x-data="{ loaded: false }"
+        <img src="{{ $src }}" alt="" hidden x-data="{ loaded: false }"
             :hidden="!loaded" x-init="loaded = $el.complete && $el.naturalWidth > 0"
             x-on:load="loaded = true" x-on:error="loaded = false" class="absolute inset-0 size-full object-cover">
     @endif
