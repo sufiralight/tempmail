@@ -65,6 +65,34 @@ class AuthenticationTest extends TestCase
         $this->assertDatabaseHas('administrative_audits', ['action' => 'media.bulk_deleted', 'target_id' => $id]);
     }
 
+    public function test_workspace_shell_groups_navigation_by_permissions_and_verification(): void
+    {
+        $member = User::factory()->unverified()->create();
+        $this->actingAs($member)->get('/dashboard')->assertOk()
+            ->assertSee('Account overview')->assertSee('Open workspace navigation')
+            ->assertSee('Account menu')->assertSee('Email verification')
+            ->assertDontSee('Temporary inbox')->assertDontSee('Admin Console');
+        $this->get('/admin')->assertForbidden();
+
+        foreach ([
+            '/dashboard' => '/dashboard',
+            '/profile' => '/profile',
+            '/profile/security' => '/profile/security',
+            '/profile/sessions' => '/profile/sessions',
+            '/profile/preferences' => '/profile/preferences',
+            '/email/verify' => '/email/verify',
+            '/media' => '/media',
+        ] as $page => $active) {
+            $this->assertActiveNavigation($page, $active);
+        }
+
+        $admin = User::factory()->create(['is_super_admin' => true]);
+        $this->actingAs($admin)->get('/dashboard')->assertOk()->assertSee('Admin Console')->assertSee('Media audit');
+        $admin->forceFill(['email_verified_at' => null])->save();
+        $this->actingAs($admin)->get('/dashboard')->assertOk()->assertDontSee('Admin Console');
+        $this->get('/admin')->assertRedirect('/email/verify');
+    }
+
     private function assertActiveNavigation(string $page, string $active): void
     {
         $html = $this->get($page)->assertOk()->getContent();

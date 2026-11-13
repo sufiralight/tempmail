@@ -30,4 +30,6 @@ The implemented catalog lives in [resources/views/components/ui](../resources/vi
 
 Use [x-layouts.app](../resources/views/components/layouts/app.blade.php) with mode installer, auth, dashboard, administration or public. It provides a skip link, brand header, theme control, main container, and optional navigation, breadcrumbs and footer slots. Use heading and description for standard page headers. Navigation wraps at narrow widths. The local-only /_ui route previews the components.
 
+Use [x-layouts.workspace](../resources/views/components/layouts/workspace.blade.php) on authenticated workspace and administration pages. It supplies the base layout with a desktop sidebar, a mobile drawer using the same links, contextual breadcrumbs, and an initials-based account menu with a CSRF-protected sign-out form. Administration links require verified email and the same abilities as their routes. Profile pages share a constrained content column.
+
 Check existing components before adding a pattern. Extend native slots and props with an accessibility contract and test the normal entry point. See [agent rules](../agents/blade-components.md).
