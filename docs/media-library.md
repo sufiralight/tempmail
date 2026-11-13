@@ -8,9 +8,9 @@ The picker supports browsing, filtering and uploading within the same authentica
 
 Only verified accounts with settings.manage can change /admin/settings/branding. A slot may reference only an owned image with a generated preview. Public branding endpoints serve re-encoded previews for the selected slots. Unconfigured logos use the built-in mark. The shared layout uses the dark logo in the effective dark theme.
 
-All Media and Trash support search, type and sort filters, grid/list display, and server-side pages of 20, 40 or 80 images. Selection is limited to the current page. The picker and the read-only administration console show active images only.
+All Media and Trash support search, type and sort filters, grid/list display, and server-side pages of 20, 40, 80 or 100 images. Selection is limited to the current page. The picker and the read-only administration console show active images only.
 
-GET /media/trash lists the signed-in owner's deleted images. POST /media/trash/restore restores one or more selected items after verifying the original and any expected preview exist. DELETE /media/trash permanently deletes one or more selected items after confirmation. Each batch validates up to 80 distinct IDs and checks ownership and branding references before changing anything. Branding changes and media lifecycle operations serialize on the same workspace row.
+GET /media/trash lists the signed-in owner's deleted images. POST /media/trash/restore restores one or more selected items after verifying the original and any expected preview exist. DELETE /media/trash permanently deletes one or more selected items after confirmation. Each batch validates up to 100 distinct IDs and checks ownership and branding references before changing anything. Branding changes and media lifecycle operations serialize on the same workspace row.
 
 Moving to Trash keeps the files and metadata private. Permanent deletion commits a purge marker before touching storage. If cleanup or the database operation fails, the affected record remains in Trash with a retry action. Restore is blocked once permanent deletion starts. Bulk feedback reports the number completed when cleanup is partial. Pending deletions require an explicit retry from Trash. Recoverable Trash has no automatic purge.
 
@@ -19,3 +19,5 @@ For an existing deployment, back up the database and private media, pause web tr
 The upload form accepts multiple files and sends each image in a separate CSRF-protected request. It shows file validation and size errors per image. A session or CSRF failure stops the batch and asks the user to refresh or sign in before retrying. Authentication, permission, rate limit, storage and network failures also stop the batch. The interface keeps confirmed successes visible and identifies files that were never sent. It never replays uploads automatically.
 
 Assigned profile photos are protected from Trash and permanent deletion. Change or remove the profile photo before moving its image. Avatar assignment and media lifecycle changes share the workspace database lock.
+
+Collection thumbnails use generated PNG previews. Images without one show a placeholder in the library and are excluded from the image picker. The original remains available from authorized image details.

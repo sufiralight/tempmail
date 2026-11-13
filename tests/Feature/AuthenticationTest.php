@@ -90,28 +90,39 @@ class AuthenticationTest extends TestCase
         $owner = User::factory()->create();
         $other = User::factory()->create();
         $ids = [];
-        foreach (range(1, 24) as $number) {
+        foreach (range(1, 125) as $number) {
             $key = (string) Str::uuid();
             Storage::disk('media')->put($key.'.png', 'fixture');
             $ids[] = DB::table('media')->insertGetId([
-                'user_id' => $number === 24 ? $other->id : $owner->id,
-                'storage_key' => $key, 'filename' => sprintf('fixture-%02d.png', $number),
+                'user_id' => $number > 120 ? $other->id : $owner->id,
+                'storage_key' => $key, 'filename' => sprintf('fixture-%03d.png', $number),
                 'mime' => 'image/png', 'extension' => 'png', 'bytes' => $number,
                 'width' => 1, 'height' => 1, 'created_at' => now(),
             ]);
         }
         $this->actingAs($owner)->get('/media?q=fixture&type=png&sort=name&layout=list')
-            ->assertOk()->assertSee('23 results')->assertSee('fixture-20.png')->assertDontSee('fixture-21.png')
+            ->assertOk()->assertSee('Showing 1–20 of 120')->assertSee('fixture-020.png')->assertDontSee('fixture-021.png')
             ->assertSee('aria-label="Page 2"', false);
         $this->get('/media?q=fixture&type=png&sort=name&layout=list&page=2')
-            ->assertOk()->assertSee('fixture-21.png')->assertDontSee('fixture-24.png');
-        $this->get('/media?per_page=40')->assertOk()->assertSee('40 per page')->assertSee('fixture-23.png');
-        $this->getJson('/media?per_page=81')->assertUnprocessable();
-        $this->postJson('/media/bulk-delete', ['items' => range(1, 81)])->assertUnprocessable();
-        $this->postJson('/media/bulk-delete', ['items' => [$ids[0], $ids[23]]])->assertNotFound();
-        $this->get('/media?per_page=40')->assertSee('fixture-01.png');
-        $this->post('/media/bulk-delete', ['items' => array_slice($ids, 0, 2)])->assertRedirect('/media');
-        $this->post('/media/trash/restore', ['items' => array_slice($ids, 0, 2)])->assertRedirect('/media/trash');
+            ->assertOk()->assertSee('fixture-021.png')->assertDontSee('fixture-121.png');
+        foreach ([40, 80, 100] as $size) {
+            $response = $this->get("/media?per_page={$size}&sort=name_desc")->assertOk()
+                ->assertSee("Showing 1–{$size} of 120")->assertSee("{$size} per page");
+            $this->assertSame($size, substr_count($response->getContent(), 'name="items[]"'));
+        }
+        $this->get('/media?per_page=100&sort=name_desc&layout=list&page=2')->assertOk()
+            ->assertSee('Showing 101–120 of 120')->assertSee('Previous')
+            ->assertSee('fixture-020.png')->assertDontSee('fixture-021.png')
+            ->assertSee('sort=name_desc&amp;layout=grid&amp;per_page=100&amp;page=2', false);
+        $this->get('/media?per_page=100&page=3')->assertOk()->assertSee('Page out of range');
+        $this->getJson('/media?per_page=101')->assertUnprocessable();
+        $this->postJson('/media/bulk-delete', ['items' => range(1, 101)])->assertUnprocessable();
+        $this->postJson('/media/bulk-delete', ['items' => [$ids[0], $ids[124]]])->assertNotFound();
+        $this->get('/media?per_page=40&sort=name')->assertSee('fixture-001.png');
+        $this->get('/media/'.$ids[0].'/file?preview=1')->assertNotFound();
+        $this->get('/media/'.$ids[0].'/file')->assertOk();
+        $this->post('/media/bulk-delete', ['items' => array_slice($ids, 0, 100)])->assertRedirect('/media');
+        $this->post('/media/trash/restore', ['items' => array_slice($ids, 0, 100)])->assertRedirect('/media/trash');
         $this->assertDatabaseHas('media', ['id' => $ids[0], 'deleted_at' => null]);
         $this->assertDatabaseHas('media', ['id' => $ids[1], 'deleted_at' => null]);
     }

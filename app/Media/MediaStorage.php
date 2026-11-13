@@ -97,7 +97,7 @@ final class MediaStorage
         }
     }
 
-    public const int MAX_SELECTION = 80;
+    public const int MAX_SELECTION = 100;
 
     /** @param list<int> $ids */
     public function moveToTrash(User $owner, array $ids): void

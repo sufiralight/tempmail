@@ -1,4 +1,4 @@
-<x-layouts.workspace title="Media Library" :description="$admin ? 'Review workspace media.' : 'Manage images in your private library.'">
+<x-layouts.workspace title="Media Library" :description="number_format($collectionTotal).' '.Str::plural('file', $collectionTotal).($trash ? ' in Trash' : ($admin ? ' across the workspace' : ' in your library'))">
     @unless($admin)
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
             <nav aria-label="Media collections" class="flex flex-wrap gap-1">
@@ -54,7 +54,7 @@
                         <x-slot:trigger>
                             <x-ui.button size="sm" variant="outline" ::disabled="!selected.length">{{ $trash ? 'Permanently delete selected' : 'Move selected to Trash' }}</x-ui.button>
                         </x-slot:trigger>
-                        <p class="ui-help mb-3">{{ $trash ? 'The selected images and their files will be permanently removed. This cannot be undone.' : 'You can restore these images from Trash. Images used in branding cannot be moved.' }}</p>
+                        <p class="ui-help mb-3">{{ $trash ? 'The selected images and their files will be permanently removed. This cannot be undone.' : 'You can restore these images from Trash. Images used for branding or profile photos cannot be moved.' }}</p>
                         <x-ui.button type="submit" :formaction="$trash ? route('media.purge') : null" :name="$trash ? '_method' : null" :value="$trash ? 'DELETE' : null" variant="destructive" busy-on-submit>{{ $trash ? 'Permanently delete' : 'Move to Trash' }}</x-ui.button>
                     </x-ui.modal>
                 </form>
@@ -63,9 +63,10 @@
                 @foreach($items as $image)
                     <li class="rounded-ui border border-border bg-surface p-3" @unless($admin) :class="{ 'ring-2 ring-inset ring-focus': selected.includes('{{ $image->id }}') }" @endunless>
                         <div @class(['min-w-0 gap-3', 'grid' => $grid, 'flex items-center' => !$grid])>
-                            @if($trash)
+                            @if($trash || !$image->thumbnail)
                                 <div @class(['grid shrink-0 place-items-center rounded-ui bg-muted', 'aspect-video' => $grid, 'size-12' => !$grid])>
                                     <x-ui.icon name="image" />
+                                    @unless($trash)<span class="sr-only">Preview unavailable</span>@endunless
                                 </div>
                             @else
                                 <img src="{{ route($admin ? 'admin.media.file' : 'media.file', ['media' => $image, 'preview' => 1]) }}" alt="{{ $image->alt_text ?? '' }}"
@@ -114,7 +115,14 @@
         </div>
     @endif
     <footer class="grid gap-3 border-t border-border pt-3">
-        <p class="ui-help">{{ number_format($items->total()) }} {{ Str::plural('result', $items->total()) }} · {{ $items->perPage() }} per page</p>
+        <p class="ui-help">
+            @if($items->isNotEmpty())
+                Showing {{ number_format($items->firstItem()) }}–{{ number_format($items->lastItem()) }} of {{ number_format($items->total()) }}
+            @else
+                {{ number_format($items->total()) }} {{ Str::plural('result', $items->total()) }}
+            @endif
+            · {{ $items->perPage() }} per page
+        </p>
         @unless($items->isEmpty())<x-ui.pagination :paginator="$items" numbered />@endunless
     </footer>
 </x-layouts.workspace>

@@ -3,6 +3,12 @@
     <x-ui.card :title="$media->filename" class="break-words">
         <x-ui.image-preview :src="route($admin ? 'admin.media.file' : 'media.file', $media)" :alt="$media->alt_text ?? ''" />
         <p class="ui-help mt-3">{{ $media->mime }} · {{ $media->width }} × {{ $media->height }} · {{ number_format($media->bytes) }} bytes · {{ $media->created_at->toDateString() }}</p>
+        @if($usedForBranding || $usedForAvatar)
+            <div class="mt-3 flex flex-wrap gap-2">
+                @if($usedForBranding)<x-ui.badge>Used in branding</x-ui.badge>@endif
+                @if($usedForAvatar)<x-ui.badge>Assigned profile photo</x-ui.badge>@endif
+            </div>
+        @endif
     </x-ui.card>
     @unless($admin)
     <x-ui.card title="Metadata">

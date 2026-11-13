@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\UploadMedia;
 use App\Media\MediaStorage;
 use App\Models\Media;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -16,7 +18,7 @@ final class MediaController extends Controller
 {
     public function index(Request $request): Response
     {
-        $filters = $request->validate(['q' => 'nullable|string|max:100', 'type' => 'nullable|in:jpg,png,webp,gif', 'sort' => 'nullable|in:newest,oldest,name,size', 'layout' => 'nullable|in:grid,list', 'per_page' => 'nullable|in:20,40,80']);
+        $filters = $request->validate(['q' => 'nullable|string|max:100', 'type' => 'nullable|in:jpg,png,webp,gif', 'sort' => 'nullable|in:newest,oldest,name,name_desc,size', 'layout' => 'nullable|in:grid,list', 'per_page' => 'nullable|in:20,40,80,100']);
         $admin = $request->routeIs('admin.media.index');
         $trash = $request->routeIs('media.trash');
         $picker = $request->routeIs('media.picker');
@@ -24,29 +26,35 @@ final class MediaController extends Controller
             $filters['avatar'] = 1;
         }
         $query = $trash ? Media::onlyTrashed() : Media::query();
-        if (isset($filters['avatar'])) {
+        if ($picker) {
             $query->where('thumbnail', true);
         }
         if (! $admin) {
             $query->where('user_id', $request->user()->id);
         }
-        if (($filters['q'] ?? '') !== '') {
+        $hasSearch = ($filters['q'] ?? '') !== '';
+        $hasType = ! empty($filters['type']);
+        $collectionTotal = ! $picker && ($hasSearch || $hasType) ? (clone $query)->count() : null;
+        if ($hasSearch) {
             $pattern = '%'.$filters['q'].'%';
             $query->where(fn ($items) => $items->whereLike('filename', $pattern)->orWhereLike('title', $pattern));
         }
-        if (! empty($filters['type'])) {
+        if ($hasType) {
             $query->where('extension', $filters['type']);
         }
         match ($filters['sort'] ?? 'newest') {
             'name' => $query->orderBy('filename'),
+            'name_desc' => $query->orderByDesc('filename'),
             'size' => $query->orderByDesc('bytes'),
             'oldest' => $query->orderBy('id'),
             default => $query->orderByDesc('id'),
         };
 
-        $items = $query->orderBy('id')->paginate($picker ? 20 : (int) ($filters['per_page'] ?? 20))->appends($filters);
+        $items = $query->orderBy('id')->paginate($picker ? 20 : (int) ($filters['per_page'] ?? 20), ['id', 'filename', 'title', 'alt_text', 'extension', 'bytes', 'thumbnail', 'created_at', 'deleted_at', 'purge_requested_at'])->appends($filters);
 
-        return response()->view($picker ? 'media.picker' : 'media.index', compact('items', 'filters', 'admin', 'trash'));
+        $collectionTotal ??= $items->total();
+
+        return response()->view($picker ? 'media.picker' : 'media.index', compact('items', 'filters', 'admin', 'trash', 'collectionTotal'));
     }
 
     public function legacyIndex(Request $request): RedirectResponse
@@ -78,7 +86,10 @@ final class MediaController extends Controller
         $admin = $request->routeIs('admin.media.show');
         Gate::authorize($admin ? 'media.audit' : 'view', $admin ? [] : $media);
 
-        return view('media.show', compact('media', 'admin'));
+        $usedForBranding = DB::table('branding_assets')->where('media_id', $media->id)->exists();
+        $usedForAvatar = User::query()->where('avatar_media_id', $media->id)->exists();
+
+        return view('media.show', compact('media', 'admin', 'usedForBranding', 'usedForAvatar'));
     }
 
     public function store(UploadMedia $request, MediaStorage $storage)
@@ -146,7 +157,8 @@ final class MediaController extends Controller
     {
         $admin = $request->routeIs('admin.media.file');
         Gate::authorize($admin ? 'media.audit' : 'view', $admin ? [] : $media);
-        $preview = $media->thumbnail && $request->boolean('preview');
+        $preview = $request->boolean('preview');
+        abort_if($preview && ! $media->thumbnail, 404);
         $disk = Storage::disk('media');
         $path = $storage->path($media, $preview);
         abort_unless($disk->exists($path), 404);

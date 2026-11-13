@@ -1,12 +1,14 @@
 @php($user = auth()->user())
-<x-layouts.workspace title="Dashboard" :description="'Welcome, '.$user->name.'.'">
-    <x-ui.card title="Account overview">
-        <div class="mb-4 flex items-center gap-3">
+<x-layouts.workspace title="Dashboard">
+    <x-ui.card title="Account overview" class="max-w-3xl">
+        <div class="mb-4 flex items-center gap-3 border-b border-border pb-4">
             <x-ui.avatar :name="$user->name" :src="$user->avatarUrl()" decorative />
-            <p class="min-w-0 break-words font-medium">{{ $user->name }}</p>
+            <div class="min-w-0">
+                <p class="break-words font-medium">{{ $user->name }}</p>
+                <p class="ui-help break-all">{{ $user->email }}</p>
+            </div>
         </div>
-        <dl class="grid gap-4 text-sm sm:grid-cols-3">
-            <div><dt class="ui-help">Email address</dt><dd class="mt-1 break-all font-mono">{{ $user->email }}</dd></div>
+        <dl class="grid gap-4 text-sm sm:grid-cols-2">
             <div><dt class="ui-help">Role</dt><dd class="mt-1">{{ $user->workspaceRole()->label() }}</dd></div>
             <div>
                 <dt class="ui-help">Email verification</dt>
