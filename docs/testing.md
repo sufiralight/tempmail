@@ -42,3 +42,5 @@ For SEO saves, click the visible submit control, check the server response and c
 - UI translation and CMS SEO tables, locale-specific slugs, RTL behavior and inactive-language visibility are future module checks. Verify schema and locale boundaries when those modules ship.
 
 See [Localization](localization.md) for the language registry, public locale rules, integration contracts, and release gates.
+
+For font catalog policy, locale typography, and deployment checks, see [Fonts Management](localization.md#fonts-management).

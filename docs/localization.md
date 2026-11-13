@@ -14,7 +14,15 @@ The registry is queried on each public request and has no persistent cache to in
 
 CMS and UI Translations should store relationships against stable language IDs and use canonical codes for external URLs. Scope slug uniqueness to the owning content type and language. Store slug, publication state and SEO metadata on the specific translation. Reload all translation fields when the editor changes languages. Apply both language activation and publication checks before including content in public routes, navigation, canonicals, hreflang and sitemaps. Authorized editors may access inactive translations. Gate schema-dependent editors on their own migrations.
 
-Fonts Management will be a separate Localization module. Reference language IDs and allow multiple script coverage entries and separate heading and body assignments where needed. Validate glyph coverage, direction, family, subsets and variable ranges. Use locally hosted fallback stacks and review Google Fonts licenses and hosting terms. Load only the font files needed by the active locale and rendered scripts. Geist does not cover all supported scripts. The registry supplies locale and direction and does not prescribe a single family per locale.
+## Fonts Management
+
+Verified Super Admins use Localization → Fonts to search the curated Google Fonts catalog, preview a language and assign body and heading families independently. The manifest in config/typography.php defines allowed family identifiers and primary writing system compatibility. Google Fonts CSS API availability was checked for the 13 families at normal weights 400 and 600. Script compatibility is curated metadata and does not certify complete glyph coverage or shaping. Urdu uses a dedicated Nastaliq candidate and Persian has a separate preview sample. Korean and Japanese may still require platform fallback for individual characters.
+
+Assignments reference language IDs, use enumerated fallback stacks and can be reset to inherited typography. Inheritance preserves Geist for Latin, Cyrillic and Vietnamese and selects a compatible active Noto family for other supported writing systems. Deactivation rejects families with explicit assignments. Inactive languages remain editable without becoming public. CMS previews should resolve typography using the edited language ID and apply direction separately.
+
+Public layouts receive typography only from the existing locale resolver. The application constructs a fixed-host CSS API URL with only the resolved family and weight pairs and deduplicates pairs in one stylesheet. The stylesheet loads asynchronously with display=swap. Local Geist and browser fallbacks remain available. Google receives the browser IP and standard request metadata when a remote font loads. Assign system typography and deactivate unassigned remote families when third-party requests are prohibited. No Google API key or runtime metadata fetch is needed. Registry reads use the database directly, so updates do not require cache clearing.
+
+Apply the reviewed language migration before the typography migration. Back up both language and font settings before rollback. Reverting the typography migration drops its assignments and family state. After deployment verify authorization, inherited typography, an active RTL locale, and network requests for the selected families.
 
 ## Deployment
 

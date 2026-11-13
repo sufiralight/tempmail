@@ -9,3 +9,5 @@ Keep installer errors redacted and credential fields out of logs and flashed inp
 Keep recoverable Trash separate from permanent cleanup. Serialize media lifecycle changes with reference updates and recheck ownership and active references before removing private files.
 
 See [Localization](../docs/localization.md) for the language registry, public locale rules, integration contracts, and release gates.
+
+For font catalog policy, locale typography, and deployment checks, see [Fonts Management](../docs/localization.md#fonts-management).

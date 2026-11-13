@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\FontController;
 use App\Http\Controllers\InstallerAdminController;
 use App\Http\Controllers\InstallerController;
 use App\Http\Controllers\LanguageController;
@@ -112,6 +113,14 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         Route::get('/settings', [WorkspaceAdminController::class, 'settings'])->middleware('can:settings.view')->name('admin.settings');
         Route::patch('/settings', [WorkspaceAdminController::class, 'updateSettings'])
             ->middleware(['can:settings.manage', 'throttle:10,1'])->name('admin.settings.update');
+        Route::prefix('fonts')->name('admin.fonts.')->middleware('can:settings.manage')->controller(FontController::class)->group(function (): void {
+            Route::get('/', 'index')->name('index');
+            Route::middleware('throttle:20,1')->group(function (): void {
+                Route::put('/assignments/{language}/{role}', 'assign')->whereNumber('language')->name('assign');
+                Route::delete('/assignments/{language}/{role}', 'reset')->whereNumber('language')->name('reset');
+                Route::patch('/{family}/visibility', 'visibility')->whereNumber('family')->name('visibility');
+            });
+        });
         Route::prefix('languages')->name('admin.languages.')->middleware('can:settings.manage')->controller(LanguageController::class)->group(function (): void {
             Route::get('/', 'index')->name('index');
             Route::get('/{language}', 'show')->whereNumber('language')->name('show');

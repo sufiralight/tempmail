@@ -14,7 +14,7 @@
 
     <section class="grid w-full items-center gap-10 py-10 sm:py-16 lg:grid-cols-[1fr_0.8fr] lg:gap-16">
         <div>
-            <h1 class="ui-display-title max-w-2xl">Temporary email.<br class="hidden sm:block"> Keep your inbox yours.</h1>
+            <h1 class="ui-display-title font-preview-heading max-w-2xl">Temporary email.<br class="hidden sm:block"> Keep your inbox yours.</h1>
             <p class="mt-5 max-w-md text-base leading-relaxed text-secondary-text sm:text-lg">Temp Mail is building disposable inboxes for messages you only need once.</p>
         </div>
         <x-ui.card class="min-w-0">

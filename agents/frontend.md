@@ -11,3 +11,5 @@ Use the global page progress controller for opt-in async work. Keep upload progr
 Use the [product patterns](../docs/design-system.md#product-patterns) for action placement, form feedback, overlays and collection state. Keep desktop and mobile navigation driven by the same items.
 
 See [Localization](../docs/localization.md) for the language registry, public locale rules, integration contracts, and release gates.
+
+For font catalog policy, locale typography, and deployment checks, see [Fonts Management](../docs/localization.md#fonts-management).

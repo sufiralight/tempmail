@@ -14,6 +14,9 @@
         <meta property="og:image" content="{{ route('branding.asset', ['slot' => 'social']) }}">
     @endif
     <x-layouts.theme-init />
+    @if($typography = request()->attributes->get('typography'))
+        <x-layouts.typography :fonts="$typography['fonts']" :stylesheet="$typography['stylesheet']" />
+    @endif
     @if ($hasAssets)
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else

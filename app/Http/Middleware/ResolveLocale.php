@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Administration\LanguageRegistry;
+use App\Administration\Typography;
 use App\Installation\InstallationAccess;
 use Closure;
 use Illuminate\Http\Request;
@@ -32,11 +33,21 @@ final class ResolveLocale
 
         $request->attributes->set('language', $language);
         $request->attributes->set('active_languages', $active);
+        $typography = app(Typography::class);
+        if ($language !== null && $typography->ready()) {
+            $fonts = $typography->resolve($language->id, $language->code);
+            $request->attributes->set('typography', ['fonts' => $fonts, 'stylesheet' => $typography->stylesheet($fonts)]);
+        }
         app()->setLocale($language->code ?? config('app.locale'));
 
         try {
             return $next($request);
         } finally {
+            $typography = app(Typography::class);
+            if ($language !== null && $typography->ready()) {
+                $fonts = $typography->resolve($language->id, $language->code);
+                $request->attributes->set('typography', ['fonts' => $fonts, 'stylesheet' => $typography->stylesheet($fonts)]);
+            }
             app()->setLocale($previous);
         }
     }

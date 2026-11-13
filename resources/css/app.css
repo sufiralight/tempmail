@@ -83,7 +83,14 @@
 
 @layer base {
     :root { --ui-duration: 150ms; }
-    body { @apply bg-page font-sans text-foreground antialiased; }
+    body {
+        @apply bg-page text-foreground antialiased;
+        font-family: var(--font-body, var(--font-sans));
+        font-weight: var(--weight-body, 400);
+    }
+
+    .font-preview { font-family: var(--font-body, var(--font-sans)); font-weight: var(--weight-body, 400); }
+    .font-preview-heading { font-family: var(--font-heading, var(--font-sans)); font-weight: var(--weight-heading, 600); }
     :focus-visible { @apply outline-2 outline-offset-2 outline-focus; }
     ::selection { @apply bg-primary text-on-primary; }
     .ui-dialog-open { overflow: hidden; }
