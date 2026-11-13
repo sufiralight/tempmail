@@ -58,6 +58,19 @@ final class TypographyTest extends TestCase
         $this->get('/locale/ur')->assertOk()->assertDontSee('fonts.googleapis.com');
     }
 
+    public function test_italic_assignment_is_persisted_and_loaded_only_for_the_selected_role(): void
+    {
+        $language = DB::table('languages')->where('code', 'en')->value('id');
+        $family = DB::table('font_families')->where('name', 'Roboto')->value('id');
+        $this->actingAs(User::factory()->create(['is_super_admin' => true]));
+        $this->put("/admin/fonts/assignments/$language/heading", [
+            'font_family_id' => $family, 'weight' => 600, 'fallback' => 'system', 'style' => 'italic',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('font_assignments', ['language_id' => $language, 'role' => 'heading', 'style' => 'italic']);
+        $this->get('/')->assertOk()->assertSee('Roboto:ital,wght@1,600', false)
+            ->assertSee('--style-heading: italic', false)->assertDontSee('Roboto:wght@400', false);
+    }
+
     public function test_font_writes_validate_roles_coverage_and_structured_fallbacks(): void
     {
         $language = DB::table('languages')->where('code', 'ar')->value('id');

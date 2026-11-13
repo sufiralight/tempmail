@@ -11,20 +11,28 @@ export function fontPreview() {
             if (!form) return;
 
             const role = form.dataset.fontRole;
-            const name = form.elements.font_family_id.selectedOptions[0].dataset.family;
+            const option = form.elements.font_family_id.selectedOptions[0];
+            const name = option.dataset.family;
+            const styleControl = form.elements.style;
+            if (styleControl) {
+                const italic = styleControl.querySelector('[value=italic]');
+                italic.disabled = option.dataset.italic !== '1';
+                if (italic.disabled) styleControl.value = 'normal';
+            }
+            const style = styleControl?.value ?? 'normal';
             const weight = form.elements.weight.value;
             const fallback = fallbackStacks[form.elements.fallback.value] ?? fallbackStacks.system;
             const sample = this.$refs.sample;
 
             if (name && /^[A-Za-z ]+$/.test(name) && ['400', '600'].includes(weight)) {
                 const url = new URL('https://fonts.googleapis.com/css2');
-                url.searchParams.set('family', name + ':wght@' + weight);
+                url.searchParams.set('family', name + (style === 'italic' ? ':ital,wght@1,' : ':wght@') + weight);
                 url.searchParams.set('display', 'swap');
-                const key = name + ':' + weight;
+                const key = name + ':' + style + ':' + weight;
                 const existing = Array.from(document.querySelectorAll('link[rel=stylesheet]')).some(link =>
                     new URL(link.href).searchParams.getAll('family').some(value => {
-                        const [family, weights] = value.split(':wght@');
-                        return family === name && weights?.split(';').includes(weight);
+                        const [family, axes, variants] = value.split(/:([^@]+)@/);
+                        return family === name && variants?.split(';').includes(axes === 'ital,wght' ? (style === 'italic' ? '1,' : '0,') + weight : style === 'normal' ? weight : '');
                     }));
                 if (!existing) {
                     const link = document.createElement('link');
@@ -41,6 +49,7 @@ export function fontPreview() {
             } else {
                 sample.style.setProperty('--font-' + role, 'Geist Variable, ' + fallback);
             }
+            sample.style.setProperty('--style-' + role, style);
             sample.style.setProperty('--weight-' + role, weight);
             this.$refs.status.textContent = 'Preview updated. Save to apply this change.';
         },

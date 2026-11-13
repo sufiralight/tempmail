@@ -86,11 +86,11 @@
     body {
         @apply bg-page text-foreground antialiased;
         font-family: var(--font-body, var(--font-sans));
-        font-weight: var(--weight-body, 400);
+        font-style: var(--style-body, normal); font-weight: var(--weight-body, 400);
     }
 
-    .font-preview { font-family: var(--font-body, var(--font-sans)); font-weight: var(--weight-body, 400); }
-    .font-preview-heading { font-family: var(--font-heading, var(--font-sans)); font-weight: var(--weight-heading, 600); }
+    .font-preview { font-family: var(--font-body, var(--font-sans)); font-style: var(--style-body, normal); font-weight: var(--weight-body, 400); }
+    .font-preview-heading { font-family: var(--font-heading, var(--font-sans)); font-style: var(--style-heading, normal); font-weight: var(--weight-heading, 600); }
     :focus-visible { @apply outline-2 outline-offset-2 outline-focus; }
     ::selection { @apply bg-primary text-on-primary; }
     .ui-dialog-open { overflow: hidden; }

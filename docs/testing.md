@@ -44,3 +44,4 @@ For SEO saves, click the visible submit control, check the server response and c
 See [Localization](localization.md) for the language registry, public locale rules, integration contracts, and release gates.
 
 For font catalog policy, locale typography, and deployment checks, see [Fonts Management](localization.md#fonts-management).
+For Typography 2.0, verify an italic Roboto assignment persists and that public CSS requests only the selected style and weight.

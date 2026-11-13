@@ -1,4 +1,4 @@
-<x-layouts.workspace title="Fonts" description="Manage typography and font coverage across your supported languages.">
+<x-layouts.workspace title="Fonts" description="Manage font families, multilingual typography, and language-specific font assignments.">
     <x-ui.card>
         <form method="get" action="{{ route('admin.fonts.index', absolute: false) }}" class="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_auto]">
             <x-ui.input name="q" type="search" label="Search font families" :value="$filters['q'] ?? null" maxlength="100" />
@@ -40,7 +40,7 @@
                         <x-ui.select name="font_family_id" :id="$role.'-family'" label="Font family">
                             <option value="">Geist / system</option>
                             @foreach($compatible as $family)
-                                <option value="{{ $family->id }}" data-family="{{ $family->name }}" @selected((int) ($assignment->font_family_id ?? 0) === (int) $family->id)>{{ $family->name }}</option>
+                                <option value="{{ $family->id }}" data-family="{{ $family->name }}" data-italic="{{ in_array($family->name, $italicFamilies, true) ? '1' : '0' }}" @selected((int) ($assignment->font_family_id ?? 0) === (int) $family->id)>{{ $family->name }}</option>
                             @endforeach
                         </x-ui.select>
                         <x-ui.select name="weight" :id="$role.'-weight'" label="Weight">
@@ -48,6 +48,12 @@
                                 <option value="{{ $weight }}" @selected($fonts[$role]['weight'] === $weight)>{{ $label }}</option>
                             @endforeach
                         </x-ui.select>
+                        @if($stylesReady)
+                            <x-ui.select name="style" :id="$role.'-style'" label="Style">
+                                <option value="normal" @selected($fonts[$role]['style'] === 'normal')>Normal</option>
+                                <option value="italic" @selected($fonts[$role]['style'] === 'italic')>Italic (Roboto)</option>
+                            </x-ui.select>
+                        @endif
                         <x-ui.select name="fallback" :id="$role.'-fallback'" label="Fallback stack">
                             @foreach(\App\Administration\Typography::FALLBACKS as $key => $stack)
                                 <option value="{{ $key }}" @selected(($assignment->fallback ?? 'system') === $key)>{{ $stack }}</option>
@@ -76,7 +82,7 @@
             <x-slot:head><tr><th scope="col">Family</th><th scope="col">Coverage</th><th scope="col">Status</th><th scope="col">Actions</th></tr></x-slot:head>
             @foreach($families as $family)
                 <tr>
-                    <th scope="row"><details><summary class="cursor-pointer">{{ $family->name }}</summary><p class="ui-help mt-1">Google Fonts · Normal · 400, 600</p></details></th>
+                    <th scope="row"><details><summary class="cursor-pointer">{{ $family->name }}</summary><p class="ui-help mt-1">Google Fonts · {{ $family->name }} · Normal{{ in_array($family->name, $italicFamilies, true) ? ', Italic' : '' }} · 400, 600</p></details></th>
                     <td>{{ implode(', ', $catalog[$family->name] ?? []) }}</td>
                     <td><x-ui.badge>{{ $family->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
                     <td>

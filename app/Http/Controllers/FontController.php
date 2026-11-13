@@ -30,6 +30,8 @@ final class FontController
         return view('workspace.fonts', [
             'filters' => $filters, 'catalog' => $catalog, 'languages' => $languages,
             'language' => $language, 'script' => $script, 'fonts' => $fonts,
+            'stylesReady' => $this->typography->stylesReady(),
+            'italicFamilies' => array_keys(array_filter($catalog, fn (array $scripts, string $family): bool => in_array('italic', $this->typography->styles($family), true), ARRAY_FILTER_USE_BOTH)),
             'stylesheet' => $this->typography->stylesheet($fonts),
             'assignments' => DB::table('font_assignments')->where('language_id', $language->id)->get()->keyBy('role'),
             'compatible' => $families->filter(fn ($family): bool => $family->is_active && in_array($script, $catalog[$family->name] ?? [], true)),
@@ -46,6 +48,7 @@ final class FontController
         $data = $request->validate([
             'font_family_id' => 'nullable|integer',
             'weight' => 'required|integer|in:400,600',
+            'style' => 'sometimes|required|in:normal,italic',
             'fallback' => ['required', Rule::in(array_keys(Typography::FALLBACKS))],
         ]);
 
@@ -57,7 +60,13 @@ final class FontController
             if ($familyId !== null && (! $family?->is_active || ! in_array($this->typography->script($locale->code), config('typography.families')[$family->name] ?? [], true))) {
                 throw ValidationException::withMessages(['font_family_id' => 'Select an active font that supports this writing system.']);
             }
+            $style = $data['style'] ?? 'normal';
+            if (! in_array($style, $this->typography->styles($family->name ?? null), true) || ($style !== 'normal' && ! $this->typography->stylesReady())) {
+                throw ValidationException::withMessages(['style' => 'Select a style supported by this family and database schema.']);
+            }
+
             DB::table('font_assignments')->updateOrInsert(['language_id' => $language, 'role' => $role], [
+                ...($this->typography->stylesReady() ? ['style' => $style] : []),
                 'font_family_id' => $familyId, 'weight' => $data['weight'], 'fallback' => $data['fallback'],
             ]);
             $this->audit->record($request->user(), 'font.assigned', 'language', $language, ['role' => $role]);

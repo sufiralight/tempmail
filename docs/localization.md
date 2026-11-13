@@ -27,3 +27,5 @@ Apply the reviewed language migration before the typography migration. Back up b
 ## Deployment
 
 Back up the application database and verify restore access before a release. Run migrate:status against the intended connection. Review pending media migration 000010 separately before approving a full migration run. The language migration requires the existing administrative schema for audited writes. Apply the reviewed migrations during the release window, verify the registry has 30 initial entries and an active default, then check the Super Admin screen and public locale routes. Package the compiled Vite assets. Do not reset a deployed database. The language migration rollback removes its own registry and must not be used after downstream modules reference it without a reviewed data plan.
+
+Typography 2.0 adds an additive style column with Normal as the default for existing assignments. Roboto offers Normal and Italic at the configured weights. Other curated families expose Normal. Deploy the style migration after the original typography migration, with a database backup. Older schemas continue to accept Normal assignments until the migration is applied.

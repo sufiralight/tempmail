@@ -20,6 +20,16 @@ final class Typography
         return once(fn (): bool => Schema::hasTable('font_families') && Schema::hasTable('font_assignments'));
     }
 
+    public function styles(?string $family): array
+    {
+        return $family === 'Roboto' ? ['normal', 'italic'] : ['normal'];
+    }
+
+    public function stylesReady(): bool
+    {
+        return once(fn (): bool => Schema::hasColumn('font_assignments', 'style'));
+    }
+
     public function seed(): void
     {
         foreach (array_keys(config('typography.families')) as $name) {
@@ -58,6 +68,7 @@ final class Typography
             $name = $assignment === null ? $inherited : ($assignment->is_active ? $assignment->name : null);
             $fonts[$role] = [
                 'family' => in_array($script, $catalog[$name] ?? [], true) ? $name : null,
+                'style' => $name === null || ! in_array($assignment->style ?? 'normal', $this->styles($name), true) ? 'normal' : ($assignment->style ?? 'normal'),
                 'weight' => (int) ($assignment->weight ?? ($role === 'heading' ? 600 : 400)),
                 'fallback' => self::FALLBACKS[$assignment->fallback ?? 'system'] ?? self::FALLBACKS['system'],
             ];
@@ -71,14 +82,25 @@ final class Typography
         $families = [];
         foreach ($fonts as $font) {
             if (isset(config('typography.families')[$font['family']]) && in_array($font['weight'], [400, 600], true)) {
-                $families[$font['family']][$font['weight']] = $font['weight'];
+                $style = $font['style'] ?? 'normal';
+                if (in_array($style, $this->styles($font['family']), true)) {
+                    $families[$font['family']][$style][$font['weight']] = $font['weight'];
+                }
             }
         }
         ksort($families);
         $parameters = [];
-        foreach ($families as $name => $weights) {
-            sort($weights);
-            $parameters[] = 'family='.urlencode($name).':wght@'.implode(';', $weights);
+        foreach ($families as $name => $styles) {
+            $italic = isset($styles['italic']);
+            $variants = [];
+            foreach (['normal', 'italic'] as $style) {
+                $weights = $styles[$style] ?? [];
+                sort($weights);
+                foreach ($weights as $weight) {
+                    $variants[] = ($italic ? ($style === 'italic' ? '1,' : '0,') : '').$weight;
+                }
+            }
+            $parameters[] = 'family='.urlencode($name).($italic ? ':ital,wght@' : ':wght@').implode(';', $variants);
         }
 
         return $parameters === [] ? null : 'https://fonts.googleapis.com/css2?'.implode('&', $parameters).'&display=swap';
