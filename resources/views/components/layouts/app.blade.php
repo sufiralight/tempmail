@@ -2,7 +2,7 @@
 
 @php($hasAssets = app(Illuminate\Foundation\Vite::class)->isRunningHot() || is_file(public_path('build/manifest.json')))
 <!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ request()->attributes->get('language')?->direction ?? 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -42,3 +42,5 @@ Use Vite as a reference for typography, responsive identity and fast feedback. U
 Place the primary action near the page heading or the relevant form. Use a descriptive pending label for writes and confirm success only after the server completes them. Reuse shared dialogs with Escape, contained focus and focus return. Use shared alerts for errors and success, and distinguish empty collections from empty filtered results. Keep secondary filters collapsible on narrow screens. Display reversible Trash actions separately from explicitly confirmed permanent deletion.
 
 Future implementation prompts should link to this guide and the [component catalog](components.md), identify existing entry points, and specify isolated regression checks.
+
+See [Localization](localization.md) for the language registry, public locale rules, integration contracts, and release gates.

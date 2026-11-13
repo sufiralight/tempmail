@@ -40,3 +40,5 @@ For SEO saves, click the visible submit control, check the server response and c
 - Keep selection queries scoped to the collection root. Check avatar loading with the actual browser and preserve the media record on avatar removal. Test owner-scoped filename collisions, SEO persistence and automatic refresh.
 - Check registration and recovery links under the intended guest configuration. Check saved and system theme transitions after reload.
 - UI translation and CMS SEO tables, locale-specific slugs, RTL behavior and inactive-language visibility are future module checks. Verify schema and locale boundaries when those modules ship.
+
+See [Localization](localization.md) for the language registry, public locale rules, integration contracts, and release gates.

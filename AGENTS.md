@@ -36,3 +36,5 @@ Future phase and step prompts must reference this file and the applicable guides
 Keep changes focused and commits descriptive. Preserve Git history and unrelated files. Obtain explicit authorization before rewriting history or force-pushing. Explain deployment configuration changes in the change summary. Keep .env, secrets, sensitive database dumps, runtime caches, and generated release assets out of Git. Use .env.example for non-sensitive settings and package public/build with releases.
 
 Start with the [project overview](docs/project-overview.md), [architecture decisions](docs/decisions.md), and [deployment procedure](docs/deployment.md).
+
+See [Localization](docs/localization.md) for the language registry, public locale rules, integration contracts, and release gates.

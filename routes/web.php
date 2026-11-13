@@ -5,6 +5,7 @@ use App\Http\Controllers\BrandingController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\InstallerAdminController;
 use App\Http\Controllers\InstallerController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\PasswordRecoveryController;
 use App\Http\Controllers\ProfileAvatarController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\WorkspaceAdminController;
 use App\Http\Middleware\BeginDatabaseVerification;
 use App\Http\Middleware\RequireActiveAccount;
 use App\Http\Middleware\RequireVerifiedInstallation;
+use App\Http\Middleware\ResolveLocale;
 use App\Http\Middleware\ThrottleInstallation;
 use App\Http\Middleware\TrackAccountSession;
 use Illuminate\Support\Facades\Route;
@@ -110,6 +112,15 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         Route::get('/settings', [WorkspaceAdminController::class, 'settings'])->middleware('can:settings.view')->name('admin.settings');
         Route::patch('/settings', [WorkspaceAdminController::class, 'updateSettings'])
             ->middleware(['can:settings.manage', 'throttle:10,1'])->name('admin.settings.update');
+        Route::prefix('languages')->name('admin.languages.')->middleware('can:settings.manage')->controller(LanguageController::class)->group(function (): void {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{language}', 'show')->whereNumber('language')->name('show');
+            Route::middleware('throttle:20,1')->group(function (): void {
+                Route::patch('/{language}', 'update')->whereNumber('language')->name('update');
+                Route::post('/bulk', 'bulk')->name('bulk');
+                Route::post('/{language}/default', 'makeDefault')->whereNumber('language')->name('default');
+            });
+        });
         Route::get('/audit-logs', [WorkspaceAdminController::class, 'audits'])->middleware('can:audit.view')->name('admin.audits');
     });
 });
@@ -117,9 +128,9 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
 Route::get('/branding/{slot}', [BrandingController::class, 'asset'])
     ->whereIn('slot', BrandingController::SLOTS)->name('branding.asset');
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::view('/', 'welcome')->middleware(ResolveLocale::class)->name('home');
+Route::view('/locale/{locale}', 'welcome')->where('locale', '[A-Za-z]{2,3}(?:[-_][A-Za-z]{2})?')
+    ->middleware(ResolveLocale::class)->name('locale.home');
 
 if (app()->environment('local')) {
     Route::get('/_ui', function () {

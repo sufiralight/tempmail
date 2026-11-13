@@ -7,3 +7,5 @@ Use the ownership map in [Architecture](../docs/architecture.md). A module owns 
 Keep HTTP concerns at the edge and business rules out of Blade. Keep shared visual patterns in Blade components. Avoid microservices and framework layers that duplicate Laravel.
 
 Apply schema changes during controlled releases and verify required migrations before exposing a module. For future translated content, use the owning module’s locale-keyed model and enforce locale availability at the route boundary.
+
+See [Localization](../docs/localization.md) for the language registry, public locale rules, integration contracts, and release gates.

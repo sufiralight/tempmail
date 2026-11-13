@@ -28,5 +28,16 @@
             </div>
         </x-ui.card>
     </section>
-    <x-slot:footer><p class="ui-help">Temp Mail</p></x-slot:footer>
+    <x-slot:footer>
+        <p class="ui-help">Temp Mail</p>
+        @if(request()->attributes->get('active_languages')?->count() > 1)
+            <nav aria-label="Languages" class="flex flex-wrap gap-3">
+                @foreach(request()->attributes->get('active_languages') as $language)
+                    <a class="underline underline-offset-4" href="{{ route('locale.home', $language->code, absolute: false) }}"
+                        lang="{{ $language->code }}" dir="{{ $language->direction }}"
+                        @if(app()->getLocale() === $language->code) aria-current="page" @endif>{{ $language->native_name }}</a>
+                @endforeach
+            </nav>
+        @endif
+    </x-slot:footer>
 </x-layouts.app>

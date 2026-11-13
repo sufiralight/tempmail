@@ -9,3 +9,5 @@ Use x-layouts.app for shared page structure and load its theme bootstrap before 
 Use the global page progress controller for opt-in async work. Keep upload progress tied to measurable bytes and preserve native navigation.
 
 Use the [product patterns](../docs/design-system.md#product-patterns) for action placement, form feedback, overlays and collection state. Keep desktop and mobile navigation driven by the same items.
+
+See [Localization](../docs/localization.md) for the language registry, public locale rules, integration contracts, and release gates.
