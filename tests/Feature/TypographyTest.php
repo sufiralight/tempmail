@@ -80,7 +80,19 @@ final class TypographyTest extends TestCase
         $this->assertSame('Geist Sans', $type->resolve($turkish, 'tr')['body']['family']);
         $this->delete("/admin/fonts/assignments/$turkish/body")->assertRedirect();
         $this->assertSame('Inter', $type->resolve($turkish, 'tr')['body']['family']);
-        $this->get("/admin/fonts?language=$turkish")->assertSee('demo@example.com')->assertSee('msg-001');
+        $this->get("/admin/fonts?language=$turkish")->assertSee('demo@example.com')->assertSee('MSG-48291');
+    }
+
+    public function test_studio_sections_keep_the_selected_language(): void
+    {
+        $language = DB::table('languages')->where('code', 'he')->value('id');
+        $this->actingAs(User::factory()->create(['is_super_admin' => true]));
+        $this->get("/admin/fonts?language=$language")->assertOk()->assertSee('Typography Studio')
+            ->assertSee('lang="he" dir="rtl"', false)->assertSee('MSG-48291')->assertDontSee('Google Fonts catalog');
+        $this->get("/admin/fonts?section=overview&language=$language")->assertOk()
+            ->assertSee('Languages inheriting for both roles')->assertSee('Geist Sans');
+        $this->get("/admin/fonts?section=library&language=$language&script=hebrew")->assertOk()
+            ->assertSee('Noto Sans Hebrew')->assertDontSee('Noto Nastaliq Urdu')->assertSee('Google Fonts catalog');
     }
 
     public function test_italic_assignment_is_persisted_and_loaded_only_for_the_selected_role(): void

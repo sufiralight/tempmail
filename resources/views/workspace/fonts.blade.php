@@ -1,48 +1,52 @@
-<x-layouts.workspace title="Fonts" description="Manage font families, multilingual typography, and language-specific font assignments.">
-    <x-ui.card>
-        <form method="get" action="{{ route('admin.fonts.index', absolute: false) }}" class="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_auto]">
-            <x-ui.input name="q" type="search" label="Search font families" :value="$filters['q'] ?? null" maxlength="100" />
-            <x-ui.select name="script" label="Writing system">
-                <option value="">All writing systems</option>
-                @foreach($scripts as $option)
-                    <option value="{{ $option }}" @selected(($filters['script'] ?? null) === $option)>{{ ucfirst($option) }}</option>
-                @endforeach
-            </x-ui.select>
+<x-layouts.workspace title="Typography Studio" :description="'Manage typography across '.$languages->count().' languages and multiple writing systems.'">
+    <nav aria-label="Typography Studio sections" class="flex flex-wrap gap-2 border-b border-border pb-3">
+        @foreach(['overview' => 'Overview', 'languages' => 'Languages', 'library' => 'Font Library'] as $key => $label)
+            <x-ui.button :href="route('admin.fonts.index', ['section' => $key, 'language' => $language->id])"
+                :variant="$section === $key ? 'secondary' : 'ghost'" :aria-current="$section === $key ? 'page' : null">{{ $label }}</x-ui.button>
+        @endforeach
+    </nav>
+    @if(!$defaultsReady || !$stylesReady)
+        <x-ui.alert variant="warning" title="Typography schema update required">
+            @unless($defaultsReady) Apply the script-default migration to edit shared defaults. @endunless
+            @unless($stylesReady) Apply the style migration to edit italic assignments. @endunless
+            Use the controlled deployment procedure.
+        </x-ui.alert>
+    @endif
+    @if($section === 'overview')
+        <x-ui.card title="Typography settings overview">
+            <dl class="grid gap-4 sm:grid-cols-2">
+                <div><dt class="ui-help">Supported languages</dt><dd>{{ $languages->count() }}</dd></div>
+                <div><dt class="ui-help">Languages inheriting for both roles</dt><dd>{{ $languages->count() - $overrideCount }}</dd></div>
+                <div><dt class="ui-help">Languages with overrides</dt><dd>{{ $overrideCount }}</dd></div>
+                <div><dt class="ui-help">Writing systems</dt><dd>{{ $languages->map(fn ($locale) => app(\App\Administration\Typography::class)->script($locale->code))->unique()->count() }}</dd></div>
+                <div><dt class="ui-help">Latin default</dt><dd>{{ $latinDefault ?? 'System fallback' }}</dd></div>
+            </dl>
+            <x-ui.button class="mt-4" :href="route('admin.fonts.index', ['language' => $language->id])">Edit language typography</x-ui.button>
+        </x-ui.card>
+    @elseif($section === 'languages')
+        <form method="get" action="{{ route('admin.fonts.index') }}" class="flex flex-wrap items-end gap-3">
             <x-ui.select name="language" label="Preview language">
                 @foreach($languages as $locale)
                     <option value="{{ $locale->id }}" @selected($locale->id === $language->id)>{{ $locale->name }} · {{ $locale->native_name }}</option>
                 @endforeach
             </x-ui.select>
-            <x-ui.button type="submit" variant="outline" icon="search">Apply</x-ui.button>
+            <x-ui.button type="submit" variant="outline">Open language</x-ui.button>
         </form>
-    </x-ui.card>
-
     <x-ui.card>
-        <div x-data="fontPreview" x-on:change="update($event)">
+        <div x-data="fontPreview" @change="update($event)" @submit="if ($event.target.method === 'post') saving = true"
+            @beforeunload.window="if (dirty && !saving) { $event.preventDefault(); $event.returnValue = true }"
+            @pageshow.window="saving = false" class="grid gap-6 lg:grid-cols-2">
+        <div class="min-w-0">
         <h2 class="ui-section-title">{{ $language->name }} typography</h2>
         <p class="ui-help mt-1"><bdi>{{ $language->native_name }}</bdi> · <code>{{ $language->code }}</code> · {{ strtoupper($language->direction) }} · {{ ucfirst($script) }} · {{ $language->is_active ? 'Active' : 'Inactive' }}</p>
-        <p class="ui-help mt-2">Coverage is based on the curated catalog. Missing glyphs use the fallback stack. Preview and public font downloads are served by Google Fonts.</p>
-        <x-layouts.typography :$fonts :$stylesheet preview />
-        <div x-ref="sample" class="font-preview mt-4 rounded-panel border border-border bg-page p-4" lang="{{ $language->code }}" dir="{{ $language->direction }}">
-            <p class="font-preview-heading text-xl leading-relaxed">{{ config('typography.samples')[$language->code] ?? $language->native_name }}</p>
-            <p class="mt-2 leading-relaxed">{{ config('typography.samples')[$language->code] ?? 'The quick brown fox jumps over the lazy dog.' }}</p>
-            <div class="mt-3 grid gap-2">
-                <x-ui.button class="justify-self-start min-h-11 h-auto whitespace-normal py-2" disabled>{{ $language->native_name }}</x-ui.button>
-                <x-ui.input label="Email address" value="demo@example.com" dir="ltr" class="font-mono" readonly />
-                <div class="rounded-ui border border-border p-2 break-words">
-                    {{ config('typography.samples')[$language->code] ?? $language->native_name }}
-                    <bdi dir="ltr" class="font-mono block">msg-001</bdi>
-                </div>
-            </div>
-        </div>
-        <p x-ref="status" role="status" class="ui-help mt-2"></p>
+        <p class="ui-help mt-2">Coverage is based on the curated catalog. Missing glyphs use the fallback stack. Remote families load from Google Fonts. Geist is bundled locally.</p>
         @if($defaultsReady)
             <form method="post" action="{{ route('admin.fonts.default', $language->id) }}" class="mt-4 flex flex-wrap items-end gap-3">
                 @csrf
                 @method('PUT')
                 <x-ui.select name="default_family_id" label="Writing system default">
                     @foreach($compatible as $family)
-                        <option value="{{ $family->id }}" @selected((string) old('default_family_id', '') === (string) $family->id || (!old('default_family_id') && $family->name === $inherited))>{{ $family->name }}</option>
+                        <option value="{{ $family->id }}" data-family="{{ $family->name }}" @selected((string) old('default_family_id', '') === (string) $family->id || (!old('default_family_id') && $family->name === $inherited))>{{ $family->name }}</option>
                     @endforeach
                 </x-ui.select>
                 <x-ui.button type="submit" busy-on-submit loading-label="Saving default…">Save writing system default</x-ui.button>
@@ -62,7 +66,7 @@
                         @csrf
                         @method('PUT')
                         <x-ui.select name="font_family_id" :id="$role.'-family'" label="Font family">
-                            <option value="">Geist / system</option>
+                            <option value="">System fallback</option>
                             @foreach($compatible as $family)
                                 <option value="{{ $family->id }}" data-family="{{ $family->name }}" data-italic="{{ in_array($family->name, $italicFamilies, true) ? '1' : '0' }}" @selected((int) old('font_family_id', $assignment->font_family_id ?? 0) === (int) $family->id)>{{ $family->name }}</option>
                             @endforeach
@@ -97,6 +101,44 @@
         </div>
         </details>
         </div>
+        <section class="min-w-0" aria-label="Typography preview">
+            <div class="flex flex-wrap items-center gap-2">
+                <x-ui.button size="sm" variant="outline" @click="mobile = !mobile" ::aria-pressed="mobile">Mobile preview</x-ui.button>
+                <x-ui.button size="sm" variant="outline" @click="dark = !dark" ::aria-pressed="dark">Dark preview</x-ui.button>
+            </div>
+        <x-layouts.typography :$fonts :$stylesheet preview />
+        <div x-ref="sample" class="font-preview mt-4 rounded-panel border border-border p-4 transition-none" :class="[mobile ? 'max-w-xs' : 'max-w-none', dark ? 'bg-zinc-900 text-zinc-50' : 'bg-white text-zinc-900']" :style="{ colorScheme: dark ? 'dark' : 'light' }" lang="{{ $language->code }}" dir="{{ $language->direction }}">
+            <p class="font-preview-heading text-xl leading-relaxed">{{ config('typography.samples')[$language->code] ?? $language->native_name }}</p>
+            <p class="mt-2 leading-relaxed">{{ config('typography.samples')[$language->code] ?? 'The quick brown fox jumps over the lazy dog.' }}</p>
+            <div class="mt-3 grid gap-2">
+                <x-ui.button class="justify-self-start min-h-11 h-auto whitespace-normal py-2" disabled>{{ $language->native_name }}</x-ui.button>
+                <x-ui.input label="Email address" value="demo@example.com" dir="ltr" class="font-mono" readonly />
+                <div class="rounded-ui border border-border p-2 break-words">
+                    {{ config('typography.samples')[$language->code] ?? $language->native_name }}
+                    <bdi dir="ltr" class="font-mono block">MSG-48291</bdi>
+                </div>
+            </div>
+        </div>
+        <p x-ref="status" role="status" class="ui-help mt-2"></p>
+            <p class="ui-help" x-cloak x-show="dirty" role="status">Unsaved changes</p>
+        </section>
+        </div>
+    </x-ui.card>
+
+    @else
+    <x-ui.card>
+        <form method="get" action="{{ route('admin.fonts.index', absolute: false) }}" class="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_auto]">
+            <input type="hidden" name="section" value="library">
+            <input type="hidden" name="language" value="{{ $language->id }}">
+            <x-ui.input name="q" type="search" label="Search font families" :value="$filters['q'] ?? null" maxlength="100" />
+            <x-ui.select name="script" label="Writing system">
+                <option value="">All writing systems</option>
+                @foreach($scripts as $option)
+                    <option value="{{ $option }}" @selected(($filters['script'] ?? null) === $option)>{{ ucfirst($option) }}</option>
+                @endforeach
+            </x-ui.select>
+            <x-ui.button type="submit" variant="outline" icon="search">Apply</x-ui.button>
+        </form>
     </x-ui.card>
 
     <h2 class="ui-section-title">Font library</h2>
@@ -107,9 +149,9 @@
             <x-slot:head><tr><th scope="col">Family</th><th scope="col">Coverage</th><th scope="col">Status</th><th scope="col">Actions</th></tr></x-slot:head>
             @foreach($families as $family)
                 <tr>
-                    <th scope="row"><details><summary class="cursor-pointer">{{ $family->name }}</summary><p class="ui-help mt-1">Google Fonts · {{ $family->name }} · Normal{{ in_array($family->name, $italicFamilies, true) ? ', Italic' : '' }} · 400, 600</p></details></th>
+                    <th scope="row"><details><summary class="cursor-pointer">{{ $family->name }}</summary><p class="ui-help mt-1">{{ $family->name === 'Geist Sans' ? 'Local Vite assets' : 'Google Fonts' }} · {{ $family->name }} · Normal{{ in_array($family->name, $italicFamilies, true) ? ', Italic' : '' }} · 400, 600</p></details></th>
                     <td>{{ implode(', ', $catalog[$family->name] ?? []) }}</td>
-                    <td><x-ui.badge>{{ $family->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
+                    <td><x-ui.badge>{{ $family->is_active ? 'Active' : 'Inactive' }}</x-ui.badge> @if($usedFamilies->contains($family->id))<x-ui.badge>Assigned</x-ui.badge>@endif</td>
                     <td>
                         <form method="post" action="{{ route('admin.fonts.visibility', $family->id, absolute: false) }}">
                             @csrf
@@ -121,5 +163,6 @@
                 </tr>
             @endforeach
         </x-ui.table>
+    @endif
     @endif
 </x-layouts.workspace>

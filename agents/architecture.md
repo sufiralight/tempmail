@@ -21,3 +21,5 @@ Keep the [implementation priorities](../docs/project-overview.md#implementation-
 Reuse the localization registry and translation value store for [homepage content](../docs/localization.md#homepage-publishing).
 
 Resolve typography through the language registry and existing font assignments. Script defaults are additive and independently deployed.
+
+Keep the Typography Studio on the existing resolver, catalog and database contracts.

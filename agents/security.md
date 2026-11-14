@@ -21,3 +21,5 @@ Serialize role and account lifecycle changes and enforce [founder and last-admin
 Keep homepage draft preview behind verified settings.manage authorization with private no-store responses.
 
 Font mutations require verified settings.manage access and catalog compatibility checks. Build remote font URLs from the fixed provider and allowed families.
+
+Keep Typography Studio mutations behind the existing font administration boundary. Accept only catalog identifiers and validated settings.

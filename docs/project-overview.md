@@ -40,3 +40,5 @@ Branding provides contextual draft previews and transactional publishing. See [B
 Languages includes the homepage editor and browser locale negotiation. Local homepage publishing still requires the pending UI Translations and homepage draft migrations.
 
 Fonts 3.0 adds script defaults and language overrides. Existing installations must apply its additive migration before editing script defaults.
+
+Typography Studio organizes the existing Fonts module into Overview, Languages and Font Library. Local script-default and italic editing still depend on pending migrations.

@@ -58,3 +58,5 @@ Apply the [Branding primary-task contract](docs/media-library.md#branding-workfl
 Keep [homepage publishing](docs/localization.md#homepage-publishing) separate from public locale resolution. Preserve canonical English, authorization and explicit visitor preferences.
 
 Use the [typography contract](docs/localization.md#multiscript-typography) for script defaults, language overrides and technical LTR text.
+
+Keep /admin/fonts as the authoritative Typography Studio. See [Typography Studio](docs/localization.md#typography-studio).

@@ -61,3 +61,10 @@ Latin uses local Geist Sans with Inter available as an alternative. Arabic, Pers
 Preview changes are scoped to the sample until Save. Local Geist is bundled by Vite. The existing fixed Google Fonts endpoint loads only selected remote families and weights with display=swap. Font assets retain their upstream licenses. Browser QA should verify actual glyph coverage and clipping, particularly for Nastaliq.
 
 The additive font_script_defaults table stores a writing system key and a catalog family reference. Deploy its migration from a verified backup after checking the target schema. The existing style migration remains separate. Existing locale assignments remain intact. The new default editor is unavailable until the table exists. Font writes use verified settings.manage access, server-side compatibility checks, and audit events.
+
+
+## Typography Studio
+
+Open Typography Studio at /admin/fonts. Languages opens by default. Use Overview for counts and migration readiness and Font Library for catalog search, script filtering and assignment status. The selected locale survives section navigation. The live sample reflects draft settings and supports narrow width and independent light and dark previews. Save applies the selected setting and reset removes the role override. The registered locale provides direction.
+
+The Studio uses the same permissions, catalog and tables. Local migration status showed pending 2026_11_13_180907_add_style_to_font_assignments and 2026_11_14_000002_create_font_script_defaults. Apply both through [controlled schema recovery](deployment.md#schema-recovery) after verifying the backup and obtaining approval. Browser checks on isolated SQLite confirmed font-face loading with English, Turkish, Arabic, Hebrew, Persian and Urdu samples at 390 px. This does not establish complete glyph coverage or verify every font and weight.

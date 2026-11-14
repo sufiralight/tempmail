@@ -19,3 +19,5 @@ Require evidence for the [primary-task contract](../docs/design-system.md#primar
 Exercise locale precedence, zero-weight ranges, per-field fallback and stale publishing revisions in isolated tests.
 
 Verify script inheritance, language overrides, reset and incompatible assignments. Browser checks must verify loaded font assets and mixed-direction controls.
+
+Exercise the Studio deep links and verify loaded font faces with representative text in a real browser.

@@ -60,3 +60,5 @@ Branding browser QA covers four independent draft fields, fallback, atomic save,
 Regression-test homepage drafts against already published values, explicit publish, private previews and concurrent revision conflicts. Check browser locale precedence and RTL in the browser matrix.
 
 Typography QA covers script compatibility, saved inheritance, draft-only preview, actual font load, RTL isolation, Nastaliq line height and mobile clipping.
+
+Typography Studio browser checks include preview width and theme, actual font-face loading with locale samples, and LTR identifiers in RTL.

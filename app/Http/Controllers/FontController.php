@@ -18,7 +18,7 @@ final class FontController
     public function index(Request $request): View
     {
         abort_unless($this->typography->ready(), 503);
-        $filters = $request->validate(['q' => 'nullable|string|max:100', 'script' => 'nullable|string|max:30', 'language' => 'nullable|integer|exists:languages,id']);
+        $filters = $request->validate(['section' => 'nullable|in:overview,languages,library', 'q' => 'nullable|string|max:100', 'script' => 'nullable|string|max:30', 'language' => 'nullable|integer|exists:languages,id']);
         $catalog = config('typography.families');
         $families = DB::table('font_families')->orderBy('name')->get();
         $languages = DB::table('languages')->orderBy('sort_order')->orderBy('id')->get();
@@ -28,6 +28,11 @@ final class FontController
         $fonts = $this->typography->resolve($language->id, $language->code);
 
         return view('workspace.fonts', [
+            'section' => $filters['section'] ?? (isset($filters['q']) || isset($filters['script']) ? 'library' : 'languages'),
+            'overrideCount' => DB::table('font_assignments')->distinct()->count('language_id'),
+            'usedFamilies' => DB::table('font_assignments')->whereNotNull('font_family_id')->distinct()->pluck('font_family_id')
+                ->merge($this->typography->defaultsReady() ? DB::table('font_script_defaults')->pluck('font_family_id') : []),
+            'latinDefault' => $this->typography->inherited('latin'),
             'filters' => $filters, 'catalog' => $catalog, 'languages' => $languages,
             'language' => $language, 'script' => $script, 'fonts' => $fonts,
             'inherited' => $this->typography->inherited($script),

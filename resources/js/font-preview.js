@@ -6,10 +6,20 @@ const fallbackStacks = {
 
 export function fontPreview() {
     return {
+        dirty: false, saving: false, mobile: false, dark: false,
         update(event) {
             const form = event.target.closest('[data-font-role]');
+            if (event.target.name === 'default_family_id') {
+                this.dirty = true;
+                const family = event.target.selectedOptions[0]?.dataset.family;
+                for (const [role, weight] of [['body', '400'], ['heading', '600']]) {
+                    this.apply(role, family, 'normal', weight, fallbackStacks.system);
+                }
+                return;
+            }
             if (!form) return;
 
+            this.dirty = true;
             const role = form.dataset.fontRole;
             const option = form.elements.font_family_id.selectedOptions[0];
             const name = option.dataset.family;
@@ -22,6 +32,10 @@ export function fontPreview() {
             const style = styleControl?.value ?? 'normal';
             const weight = form.elements.weight.value;
             const fallback = fallbackStacks[form.elements.fallback.value] ?? fallbackStacks.system;
+            this.apply(role, name, style, weight, fallback);
+        },
+
+        apply(role, name, style, weight, fallback) {
             const sample = this.$refs.sample;
 
             if (name && name !== 'Geist Sans' && /^[A-Za-z ]+$/.test(name) && ['400', '600'].includes(weight)) {

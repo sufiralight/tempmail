@@ -64,3 +64,5 @@ Branding pairs asset settings with contextual previews on desktop and places eac
 The homepage editor pairs canonical English with localized fields and stacks them at narrow widths. Draft and publish have distinct actions.
 
 Use resolved interface typography for localized surfaces and Geist Mono for technical values. Keep direction tied to the language registry.
+
+Typography Studio keeps the live sample alongside settings on larger screens and below settings on mobile.

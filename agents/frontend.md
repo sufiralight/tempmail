@@ -25,3 +25,5 @@ Use the [primary-task contract](../docs/design-system.md#primary-task-contract) 
 Use native language names and registry direction. Keep the homepage source and editable localized fields visible together where space permits.
 
 Preview the effective font in localized controls and isolate addresses and identifiers with LTR Geist Mono.
+
+Keep language editing and the sampled appearance together. Scope preview width and theme controls to the sample.
