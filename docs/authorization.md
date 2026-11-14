@@ -1,12 +1,12 @@
 # Workspace authorization
 
-The installer-created Super Admin retains authority through the existing is_super_admin flag. The added role field stores member and admin assignments. WorkspaceRole resolves the effective role and registers these permissions through Laravel Gates.
+WorkspaceRole resolves the effective role from the is_super_admin flag and the stored role. Laravel Gates enforce the permissions below.
 
 | Role | Permissions |
 | --- | --- |
-| user | dashboard.view |
-| admin | dashboard.view, admin.access, users.view, settings.view |
-| super_admin | All admin permissions plus users.manage, roles.manage, settings.manage, audit.view, media.audit |
+| Member (user) | dashboard.view |
+| Admin (admin) | dashboard.view, admin.access, users.view, settings.view |
+| Super Admin (super_admin) | All admin permissions plus users.manage, roles.manage, settings.manage, audit.view, media.audit |
 
 Every console route requires an active authenticated account, verified email, and the relevant Gate. User mutations also use UserPolicy. Public signup creates active members. Privileged fields are excluded from mass assignment. Disabled accounts cannot sign in and lose access on the next protected request.
 
@@ -20,8 +20,10 @@ The Roles & permissions page derives its matrix from WorkspaceRole and counts as
 
 ## Founder Super Admin
 
+**Implemented.** The isolated installer and authorization tests verify the original administrator reference and protected role and activation operations.
+
 The singleton installation record identifies the Founder through initial_admin_id. Finalization writes this record and the first Super Admin in the same transaction. Founder is a protected identity within the Super Admin role. Regular Super Admins retain existing role management authority. Admins have limited console access and Members use the workspace.
 
-Role and activation changes acquire the shared workspace lock, reload the actor and target, and reject founder demotion or deactivation with an audit event. The installation foreign key protects hard deletion and the application has no account deletion or suspension endpoint. Future lifecycle operations must enforce founder protection under the same lock. Last active Super Admin protection applies independently. Founder accounts use normal authentication and session controls.
+Role and activation changes acquire the shared workspace lock, reload the actor and target, and reject founder demotion or deactivation with an audit event. The installation foreign key protects hard deletion and the application has no account deletion or suspension endpoint. Any future lifecycle operation must enforce founder protection under the same lock. Ordinary user management provides no founder reassignment action. Last active Super Admin protection applies independently. Founder accounts use normal authentication and session controls.
 
-If the installation record is missing or its provenance is uncertain, open an operator-controlled recovery window. Verify the deployment database, take a recoverable backup and validate the original installation identity against trusted backups and installation records. Restore the verified singleton and original administrator reference from that evidence through controlled database recovery. If the original identity cannot be verified, leave founder unassigned and retain last active Super Admin protection. Escalate to the deployment operator for identity recovery.
+If the installation record is missing or its provenance is uncertain, open an operator-controlled recovery window. Verify the deployment database, take a recoverable backup and validate the original installation identity against trusted backups and installation records. Never infer it from email, username, display name or the lowest user ID. Restore the verified singleton and original administrator reference from that evidence through controlled database recovery. If the original identity cannot be verified, leave founder unassigned and retain last active Super Admin protection. Escalate to the deployment operator for identity recovery.

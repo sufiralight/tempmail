@@ -50,3 +50,5 @@ For font catalog policy, locale typography, and deployment checks, see [Fonts Ma
 See [UI Translations](localization.md#ui-translations) for key registration, status workflow, escaping and deployment checks.
 
 Keep the Roles & permissions matrix aligned with the [authorization contracts](authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.
+
+Visual review and functional verification are separate release checks. Evaluate responsive and LTR/RTL behavior, keyboard focus and all theme modes with the [browser QA matrix](testing.md#browser-qa-matrix).

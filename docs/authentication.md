@@ -15,11 +15,11 @@ The login limiter permits five attempts per normalized email and network peer pe
 
 Laravel encrypts the session cookie and uses file-backed sessions by default. Preserve HttpOnly, SameSite and Secure on production HTTPS. No remember-me UI is provided. Authentication session middleware checks password hash changes on protected routes. Password fields use the shared accessible toggle and password manager autocomplete attributes.
 
-Configure a direct delivery mailer such as SMTP and a canonical HTTPS APP_URL for real reset email. The log, array and composite mailers are excluded from reset delivery. Future password confirmation and account pages can reuse these routes and guards. See [Authorization](authorization.md) and [Installation](installation.md).
+Configure a direct delivery mailer such as SMTP and a canonical HTTPS APP_URL for real reset email. AccountMail accepts smtp, sendmail, ses, ses-v2, postmark, resend and mailgun. It rejects the log, array and composite mailers for reset and verification to keep tokens out of logs. Future password confirmation and account pages can reuse these routes and guards. See [Authorization](authorization.md) and [Installation](installation.md).
 
 ## Email verification and password policy
 
-Registration sends Laravel's signed verification notification using the configured APP_URL. Links expire after 60 minutes by default and require the matching signed-in account. The workspace and logout remain available before verification. Administration requires an active administrative account and verified email. The authorized installer records the first Super Admin's initial email as verified during account creation. Public registration and later email changes use signed email verification. Resends are limited to three per account per minute. Configure a direct mail transport for both account email flows.
+Registration attempts to send Laravel’s signed verification notification using the configured APP_URL. Links expire after 60 minutes by default and require the matching signed-in account. The workspace and logout remain available before verification. Administration requires an active administrative account and verified email. The authorized installer records the first Super Admin's initial email as verified during account creation. Public registration and later email changes use signed email verification. Resends are limited to three per account per minute. Configure a direct mail transport for both account email flows.
 
 Password creation uses AccountPassword for a 12-character minimum, a 1024-character maximum, the bcrypt 72-byte limit when active, and local rejection of a small list of common passwords, simple repeats, and sequences. The feedback component is a local estimate based on length and predictable patterns. It sends no password data and does not check a breach database. Reuse x-ui.password-strength with the IDs of the two shared password fields for future password changes. The server policy applies regardless of the displayed score.
 
@@ -42,3 +42,9 @@ Apply the additive account preferences and session migration during the controll
 Upload a photo or choose an owned image from the Media Library on Profile. The account stores a nullable reference to an active image with a generated PNG preview. Replacing or removing the photo leaves the previous image in the library. The signed-in owner and verified administrators with users.view can read the assigned preview through their respective routes. Other media remains subject to its existing policy.
 
 Back up the database and private media and apply the additive avatar migration with `php artisan migrate --force` during the controlled deployment before reopening authenticated routes. Existing accounts start with initials.
+
+## Account mail deployment checks
+
+The local environment used MAIL_MAILER=log when checked on 2026-11-14. Real delivery is unverified. Use a supported production mail transport. For SMTP, use the provider’s authenticated TLS settings, verified sender and canonical HTTPS APP_URL. Keep credentials in private deployment configuration. Recovery keeps a neutral response when delivery fails. Verification resend reports failure and permits retry within the existing rate limit.
+
+On the target deployment, use disposable accounts and a controlled mailbox to verify registration or resend, signed-link verification, reset delivery and single-use token consumption. Inspect redacted diagnostics on transport failure. See [Deployment](deployment.md#releases-backups-and-troubleshooting).

@@ -27,3 +27,10 @@ After confirmed uploads, the browser refreshes the collection and count using th
 Image details stores optional title, ALT text, caption and description on the same media record. The picker emits a media-selected event containing the existing ID and private preview URL plus a metadata object. Treat metadata as plain text and revalidate ownership on save. Apply pending migrations before opening traffic. A schema-category 503 on media.index can occur when the listing requests purge_requested_at before migration 000007 is applied, including during the GET refresh after an upload.
 
 A single successful library upload opens Image Details after refreshing the collection. Batch uploads keep per-file results and edit links. Duplicate display names are allocated inside the workspace transaction, scoped to the owner and including Trash. Original filenames are stored separately for new uploads. Older records use their existing filename. UUID storage paths stay unchanged. Apply migration 000010 during controlled deployment before accepting uploads. The default metadata stays on the media record. Future localized values can use a translation table keyed by media ID and locale.
+
+## Media integration verification
+
+- **Profile picker:** Automated tests verify assigning an existing owned image and rejecting cross-owner and trashed images. The complete browser picker selection remains unverified.
+- **Avatar persistence:** The reference is verified by a fresh database read and subsequent authenticated image requests. Browser reload after selecting via the picker remains unverified.
+- **Branding picker:** Tests verify the chooser renders, saving an eligible reference, public preview delivery and reference protection. Browser selection and confirmation remain unverified.
+- **Trash thumbnails:** Trash currently displays a placeholder. Authorized Trash thumbnail delivery is **PLANNED — NOT IMPLEMENTED**. Active private preview routes retain their existing state checks.

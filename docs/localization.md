@@ -26,7 +26,7 @@ Apply the reviewed language migration before the typography migration. Back up b
 
 ## Deployment
 
-Back up the application database and verify restore access before a release. Run migrate:status against the intended connection. Review pending media migration 000010 separately before approving a full migration run. The language migration requires the existing administrative schema for audited writes. Apply the reviewed migrations during the release window, verify the registry has 30 initial entries and an active default, then check the Super Admin screen and public locale routes. Package the compiled Vite assets. Do not reset a deployed database. The language migration rollback removes its own registry and must not be used after downstream modules reference it without a reviewed data plan.
+Back up the application database and verify restore access before a release. Run migrate:status against the intended connection. Review all pending migrations against the approved release scope. The language migration requires the existing administrative schema for audited writes. Apply the reviewed migrations during the release window, verify the registry has 30 initial entries and an active default, then check the Super Admin screen and public locale routes. Package the compiled Vite assets. Do not reset a deployed database. The language migration rollback removes its own registry and must not be used after downstream modules reference it without a reviewed data plan.
 
 Typography 2.0 adds an additive style column with Normal as the default for existing assignments. Roboto offers Normal and Italic at the configured weights. Other curated families expose Normal. Deploy the style migration after the original typography migration, with a database backup. Older schemas continue to accept Normal assignments until the migration is applied.
 
@@ -38,4 +38,6 @@ Missing means no locale-specific value. Draft and Needs review are private. Tran
 
 Editors can access inactive languages, with direction and typography derived from Languages and Fonts. Store long-form CMS content and SEO translations in their owning modules. Back up the database and apply the Languages migration before UI Translations. The Fonts style migration is independent. An unavailable translation schema returns HTTP 503 in the console and falls back to the existing source on public pages. Verify a published translation and a draft in an active locale after deployment.
 
-Localization links are available from the workspace sidebar for active, verified Super Admins. The authorized installer records the initial Super Admin's email as verified during account creation.
+Localization links appear inside the Admin Console for active, verified Super Admins with settings.manage. See [navigation contexts](components.md#navigation-contexts). The authorized installer records the initial Super Admin's email as verified during account creation.
+
+As verified on 2026-11-14, the local database has the language and base typography migrations. The Fonts style and UI Translations migrations are pending. Normal font assignments remain available, Italic requires the style column, and the UI Translations console returns HTTP 503 until its schema exists. Verify the target independently before release.

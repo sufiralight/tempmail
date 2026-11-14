@@ -46,3 +46,5 @@ See [UI Translations](docs/localization.md#ui-translations) for key registration
 Keep the Roles & permissions matrix aligned with the [authorization contracts](docs/authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.
 
 Preserve the installer-recorded Founder Super Admin and the independent last active Super Admin invariant in every account lifecycle change. See [Workspace authorization](docs/authorization.md#founder-super-admin).
+
+Use the [navigation contexts](docs/components.md#navigation-contexts) and [deployment checks](docs/deployment.md#releases-backups-and-troubleshooting) when changing console access or schema-backed features.
