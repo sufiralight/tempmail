@@ -1,4 +1,5 @@
 <x-layouts.workspace title="Users">
+    <x-workspace.users-navigation />
     <x-ui.card>
         <form method="get" action="/admin/users" class="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_auto]">
             <x-ui.input name="q" type="search" label="Search name or email" :value="$filters['q'] ?? null" maxlength="100" />

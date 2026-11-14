@@ -29,7 +29,7 @@ Use Laravel 13 and the PHP 8.5 target with Blade, Alpine, Tailwind CSS 4 and Vit
 
 ### Additional status detail
 
-The installer and account authentication are implemented with isolated regression coverage. Live target deployment and real account mail remain partially verified. Trash move, restore and permanent deletion are implemented with automated coverage. Trash displays placeholders. Authorized thumbnail delivery is unimplemented. Roles & Permissions is implemented as a read-only matrix. Its [Users navigation target](components.md#users-navigation-target) is approved and unimplemented.
+The installer and account authentication are implemented with isolated regression coverage. Live target deployment and real account mail remain partially verified. Trash move, restore and permanent deletion are implemented with automated coverage. Trash displays placeholders. Authorized thumbnail delivery is unimplemented. Roles & Permissions is implemented as a read-only matrix. It is available from the [Users secondary navigation](components.md#users-navigation-target).
 
 ### Core Temp Mail scope
 

@@ -9,7 +9,8 @@
     ];
 @endphp
 
-<x-layouts.workspace title="Roles & permissions" description="Understand access levels and manage role assignments across your workspace.">
+<x-layouts.workspace title="Roles & permissions" description="Compare the permissions of the built-in workspace roles.">
+    <x-workspace.users-navigation />
     <div class="flex flex-wrap items-center justify-between gap-3">
         <p class="ui-help">System roles have fixed permissions. Change assignments from an account’s details.</p>
         @can('users.view')

@@ -11,7 +11,6 @@
         $groups['Administration'] = [
             ['admin', 'Admin Overview', 'shield'],
             ...($user->can('users.view') ? [['admin.users', 'Users', 'user', 'admin.users.*']] : []),
-            ...($user->can('roles.manage') ? [['admin.roles', 'Roles & permissions', 'shield']] : []),
             ...($user->can('settings.view') ? [['admin.settings', 'Settings', 'settings']] : []),
             ...($user->can('settings.manage') ? [['admin.branding', 'Branding', 'image']] : []),
             ...($user->can('media.audit') ? [['admin.media.index', 'Media audit', 'image', 'admin.media.*']] : []),
@@ -38,10 +37,11 @@
                     @php
                         [$route, $label, $icon] = $item;
                         $current = request()->routeIs($route, $item[3] ?? $route);
+                        $section = $route === 'admin.users' && request()->routeIs('admin.roles');
                     @endphp
                     <li>
-                        <x-ui.button :href="route($route, absolute: false)" :icon="$icon" :variant="$current ? 'secondary' : 'ghost'"
-                            :aria-current="$current ? 'page' : null" :class="$current ? 'w-full justify-start! text-start border-control-border!' : 'w-full justify-start! text-start'">
+                        <x-ui.button :href="route($route, absolute: false)" :icon="$icon" :variant="$current || $section ? 'secondary' : 'ghost'"
+                            :aria-current="$current ? 'page' : ($section ? 'true' : null)" :class="$current ? 'w-full justify-start! text-start border-control-border!' : 'w-full justify-start! text-start'">
                             <span class="min-w-0 break-words">{{ $label }}</span>
                         </x-ui.button>
                     </li>

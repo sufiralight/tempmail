@@ -42,4 +42,4 @@ The desktop sidebar and mobile drawer render the same link configuration. Mark t
 
 ### Users navigation target
 
-**APPROVED — NOT IMPLEMENTED.** Users becomes the primary Admin Console destination for accounts. Its secondary navigation contains All users and Roles & permissions. Keep /admin/roles available under its existing authorization and remove its separate sidebar entry when the secondary navigation ships. The current sidebar still lists Roles & permissions separately.
+Users is the primary Admin Console destination for accounts. Its secondary navigation contains All users and, for accounts with roles.manage, Roles & permissions. The existing /admin/roles route remains available and the sidebar highlights Users while the matrix is open.

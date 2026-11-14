@@ -587,7 +587,7 @@ class AuthenticationTest extends TestCase
             ->assertSee('data-page-progress-root', false)->assertDontSee('href="/admin/users"', false);
         $this->get('/admin/users')->assertForbidden();
         $this->get('/admin/roles')->assertForbidden();
-        $this->actingAs($admin)->get('/admin/users?q=Unique&role=user')->assertOk()->assertSee('Unique Member');
+        $this->actingAs($admin)->get('/admin/users?q=Unique&role=user')->assertOk()->assertSee('Unique Member')->assertSee('All users')->assertDontSee('href="/admin/roles"', false);
         $this->get('/admin/users?page=2')->assertOk()->assertSee('Page 2');
         $this->get('/admin/settings')->assertOk();
         $this->patch('/admin/settings', ['display_name' => 'Forbidden'])->assertForbidden();
@@ -596,7 +596,7 @@ class AuthenticationTest extends TestCase
 
         $this->get('/admin/roles')->assertForbidden();
         $this->actingAs($owner)->get('/admin/roles')->assertOk()
-            ->assertSee('Permission matrix')
+            ->assertSee('Permission matrix')->assertSee('All users')->assertSee('aria-label="User management"', false)
             ->assertSee('23 accounts')
             ->assertSee('1 account')
             ->assertSee('Manage UI translations')

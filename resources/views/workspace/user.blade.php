@@ -1,4 +1,5 @@
 <x-layouts.workspace title="Account details">
+    <x-workspace.users-navigation />
     <x-ui.card :title="$account->name">
         <x-ui.avatar :name="$account->name" :src="$account->avatarUrl(admin: true)" size="lg" decorative class="mb-3" />
         <dl class="grid gap-2 text-sm">
