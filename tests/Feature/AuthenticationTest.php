@@ -63,10 +63,18 @@ class AuthenticationTest extends TestCase
         $this->assertActiveNavigation('/admin', '/admin');
         $this->get("/admin/media/{$id}")->assertOk()->assertDontSee('Save details');
         $this->actingAs($owner)->get('/admin/settings/branding')->assertOk()->assertSee('Choose image');
-        $branding = ['logo' => $id, 'dark-logo' => $id, 'favicon' => null, 'social' => null];
+        $branding = ['logo' => $id, 'dark-logo' => $id, 'favicon' => $id, 'social' => $id];
+        $this->from('/admin/settings/branding')->patch('/admin/settings/branding', array_replace($branding, ['social' => 999999]))
+            ->assertRedirect('/admin/settings/branding')->assertSessionHasErrors('social');
+        $this->assertDatabaseCount('branding_assets', 0);
+        $this->get('/admin/settings/branding')->assertOk()->assertSee('fixture.png')->assertSee('Light header')->assertSee('Dark header');
         $this->patch('/admin/settings/branding', $branding)->assertRedirect();
         $this->get('/dashboard')->assertOk()->assertSee('/branding/logo')->assertSee('/branding/dark-logo');
-        $this->get('/branding/logo')->assertOk();
+        $this->get('/branding/logo')->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->get('/dashboard')->assertSee('/branding/favicon')->assertSee('/branding/social');
+        foreach (array_keys($branding) as $slot) {
+            $this->assertDatabaseHas('branding_assets', ['slot' => $slot, 'media_id' => $id]);
+        }
         $this->delete("/media/{$id}")->assertSessionHasErrors('media');
         $this->patch('/admin/settings/branding', array_fill_keys(array_keys($branding), null))->assertRedirect();
         $this->post('/media/bulk-delete', ['items' => [$id]])->assertRedirect();

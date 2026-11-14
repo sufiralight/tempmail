@@ -43,3 +43,5 @@ The desktop sidebar and mobile drawer render the same link configuration. Mark t
 ### Users navigation target
 
 Users is the primary Admin Console destination for accounts. Its secondary navigation contains All users and, for accounts with roles.manage, Roles & permissions. The existing /admin/roles route remains available and the sidebar highlights Users while the matrix is open.
+
+The media picker emits media-selected with ID, preview, filename and metadata, and media-cleared when its selection is removed. Branding scopes each listener to its own field.

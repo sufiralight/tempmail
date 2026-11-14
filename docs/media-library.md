@@ -6,7 +6,7 @@ The local media disk stores original bytes and PNG previews under storage/app/me
 
 The picker supports browsing, filtering and uploading within the same authenticated owner scope. Pass name, label, and optional value and preview-url to x-ui.media-picker. The parent receives an ID and must revalidate ownership on submission. Upload progress uses measured bytes where supported. Cancellation stops remaining uploads and the active request, but a server-side operation may already have committed.
 
-Only verified accounts with settings.manage can change /admin/settings/branding. A slot may reference only an owned image with a generated preview. Public branding endpoints serve re-encoded previews for the selected slots. Unconfigured logos use the built-in mark. The shared layout uses the dark logo in the effective dark theme.
+Only verified accounts with settings.manage can change /admin/settings/branding. New assignments require an owned active image and an existing PNG preview. An unchanged slot may retain an already published image owned by another administrator. Public branding endpoints serve re-encoded previews for the selected slots. Unconfigured logos use the built-in mark. The shared layout uses the dark logo in the effective dark theme.
 
 All Media and Trash support search, type and sort filters, grid/list display, and server-side pages of 20, 40, 80 or 100 images. Selection is limited to the current page. The picker and the read-only administration console show active images only.
 
@@ -40,3 +40,7 @@ A single successful library upload opens Image Details after refreshing the coll
 **APPROVED — NOT IMPLEMENTED** for full return-context continuity. Verify the uploaded ID, accurate progress and partial success, safe retries, metadata persistence, unsaved-change protection, inline validation and accessible feedback. On return, preserve relevant search, filters, pagination, selected item, scroll and keyboard focus. Check single and bulk feedback and recovery together.
 
 Browser picker acceptance requires selecting and confirming the correct media ID, saving and reloading the avatar or intended branding field, checking authorized delivery, then removing the assignment and verifying the original remains. Trash thumbnail acceptance requires private authorized delivery, a fallback for missing files and meaningful empty states. Existing restore operations remain part of the regression checks.
+
+## Branding workflow
+
+Select assets → Preview real usage → Save → Verify published result. The four fields stage draft changes independently. Light and dark headers, a 16 px browser tab, and a cropped sharing card preview those choices. Dark mode uses the primary logo when its own slot is empty. Favicons are PNG previews. Social cropping is presentational and varies by platform. Saving validates the complete form in one transaction and validation redirects retain submitted draft selections. Removing an assignment leaves the library record intact.

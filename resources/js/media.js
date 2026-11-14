@@ -202,7 +202,7 @@ Alpine.data('mediaPicker', () => ({
                 const value = event.data.metadata?.[key];
                 metadata[key] = typeof value === 'string' ? value : '';
             }
-            this.$dispatch('media-selected', {id: event.data.id, preview: expected, metadata});
+            this.$dispatch('media-selected', {id: event.data.id, preview: expected, metadata, filename: typeof event.data.filename === 'string' ? event.data.filename : ''});
             frame.closest('dialog').close();
         }, {signal: this.listeners.signal});
     },

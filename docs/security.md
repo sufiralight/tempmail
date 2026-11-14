@@ -17,3 +17,5 @@ HTTP exception reports include the exception class, route name and a coarse fail
 Responses include nosniff, no-referrer, a restricted Permissions-Policy and CSP frame restrictions. The media picker permits same-origin framing. HSTS requires production, an HTTPS APP_URL and a secure request under Laravel's existing proxy configuration. CSP leaves script execution unchanged for the current Alpine and Vite integration.
 
 Boost browser log collection is disabled in application configuration in every environment. The package watcher captures full URLs and arbitrary console arguments without application-specific redaction. Local developers can use browser DevTools and normal Laravel logs. Deploy with Composer dev dependencies excluded.
+
+Public branding serves only the PNG preview assigned to a known slot. Draft URLs remain subject to media ownership. The branding transaction checks active media and preview availability before publishing.
