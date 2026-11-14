@@ -40,4 +40,4 @@ Editors can access inactive languages, with direction and typography derived fro
 
 Localization links appear inside the Admin Console for active, verified Super Admins with settings.manage. See [navigation contexts](components.md#navigation-contexts). The authorized installer records the initial Super Admin's email as verified during account creation.
 
-As verified on 2026-11-14, the local database has the language and base typography migrations. The Fonts style and UI Translations migrations are pending. Normal font assignments remain available, Italic requires the style column, and the UI Translations console returns HTTP 503 until its schema exists. Verify the target independently before release.
+As verified on 2026-11-14, the local database has the language and base typography migrations. Fonts style and UI Translations are pending. Normal font assignments work without the style column. Italic requires it, and UI Translations returns HTTP 503 until its schema exists. Verify the target independently and follow the [schema recovery procedure](deployment.md#schema-recovery).

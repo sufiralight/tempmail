@@ -52,3 +52,9 @@ See [UI Translations](localization.md#ui-translations) for key registration, sta
 Keep the Roles & permissions matrix aligned with the [authorization contracts](authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.
 
 Visual review and functional verification are separate release checks. Evaluate responsive and LTR/RTL behavior, keyboard focus and all theme modes with the [browser QA matrix](testing.md#browser-qa-matrix).
+
+## Primary-task contract
+
+For each new or revised screen, document the primary task and action, successful outcome, loading and empty states, validation, failure and safe recovery, navigation continuity, authorization, accessibility, automated coverage and browser QA. These are acceptance criteria.
+
+Use Vercel’s hierarchy to make location, purpose, primary action, required attention and next step evident. Use Vite’s responsiveness principles to preserve relevant query, page, scroll and focus context and provide immediate async feedback. Use Stripe’s transaction clarity to identify pending work, saved changes, failures, incomplete items and safe retry paths. Prevent duplicate submissions and confirm only completed operations.

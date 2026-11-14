@@ -19,3 +19,5 @@ See [UI Translations](../docs/localization.md#ui-translations) for key registrat
 Keep the Roles & permissions matrix aligned with the [authorization contracts](../docs/authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.
 
 Follow the [workspace and console navigation contexts](../docs/components.md#navigation-contexts).
+
+Use the [primary-task contract](../docs/design-system.md#primary-task-contract) to prioritize the main action, preserve task context and define failure recovery.

@@ -39,3 +39,7 @@ Check existing components before adding a pattern. Extend native slots and props
 The User Workspace lists Dashboard and Media Library. Eligible accounts see one Admin Console entry. The Admin Console adds authorized administration links and groups Languages, Fonts, and UI Translations under Localization for accounts with settings.manage. Both contexts use the same authenticated session.
 
 The desktop sidebar and mobile drawer render the same link configuration. Mark the active destination with aria-current and use named route families for nested screens. Keep the drawer keyboard-operable with Escape and focus return. The workspace navigation regression is covered by the authenticated shell test. See [Testing](testing.md#browser-qa-matrix) for browser checks.
+
+### Users navigation target
+
+**APPROVED — NOT IMPLEMENTED.** Users becomes the primary Admin Console destination for accounts. Its secondary navigation contains All users and Roles & permissions. Keep /admin/roles available under its existing authorization and remove its separate sidebar entry when the secondary navigation ships. The current sidebar still lists Roles & permissions separately.

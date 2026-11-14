@@ -18,3 +18,19 @@ Temp Mail SaaS implements the installer, account workspace and administration fo
 Verification applies to the tested scope. Production gates include target schema, private storage, mail delivery, responsiveness and accessibility.
 
 Use Laravel 13 and the PHP 8.5 target with Blade, Alpine, Tailwind CSS 4 and Vite. Build assets locally or in CI for Apache/cPanel. See [Architecture](architecture.md), [Deployment](deployment.md), [Decisions](decisions.md) and [Localization](localization.md).
+
+## Implementation priorities
+
+1. **Database schema recovery.** Restore local Fonts style and UI Translations compatibility through [controlled recovery](deployment.md#schema-recovery).
+2. **Media Library UX.** Complete and verify [Upload → Review/Edit → Return to Library](media-library.md#upload-edit-and-return).
+3. **Picker, Branding and Trash.** Verify selection and persistence end to end and implement authorized Trash thumbnails.
+4. **Account email.** Configure supported secure delivery and verify reset and verification.
+5. **Core Temp Mail.** Implement temporary address creation, inbox synchronization and message reading.
+
+### Additional status detail
+
+The installer and account authentication are implemented with isolated regression coverage. Live target deployment and real account mail remain partially verified. Trash move, restore and permanent deletion are implemented with automated coverage. Trash displays placeholders. Authorized thumbnail delivery is unimplemented. Roles & Permissions is implemented as a read-only matrix. Its [Users navigation target](components.md#users-navigation-target) is approved and unimplemented.
+
+### Core Temp Mail scope
+
+Temporary address generation and inbox/IMAP synchronization are **Planned**. The core journey generates and displays a temporary address, receives messages, renders messages safely, and enforces access and expiry with loading, empty, error and expired states. The approved direction is hosting mailboxes with IMAP, multiple system and custom domains, simple domain CRUD and bounded shared-hosting scheduled synchronization. Automated DNS verification and MX/TXT management are optional outside this scope. Dashboard currently provides account and workspace functions.

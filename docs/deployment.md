@@ -25,3 +25,12 @@ Back up the database, private media, installer completion marker, SQLite file wh
 Confirm the target database connection and a recoverable backup. Review migrate:status and the release scope, then apply only approved migrations through a controlled terminal or through the hosting operator. Preserve existing records and avoid destructive database resets. The web installer handles fresh schema setup without shell access. Check migration status before opening traffic. After changing configuration, clear the configuration cache through the release tooling or have the host remove the generated bootstrap/cache/config.php file. Keep public/hot out of the release. A missing manifest requires redeploying the complete public/build directory from the same release.
 
 Follow the [account mail deployment checks](authentication.md#account-mail-deployment-checks). Configure hosting cron for Laravel schedule:run to enforce session retention. Pending media deletion is retried from Trash.
+
+## Schema recovery
+
+1. Confirm the intended connection and inspect migration status.
+2. Verify a recoverable backup, then inspect the actual schema and relevant data.
+3. Plan additive changes and apply only explicitly approved migrations in a separate implementation task.
+4. Verify the resulting schema, exercise each affected module and run regressions.
+
+A migration file, a recorded migration, the resulting schema and functional module behavior are separate evidence. See [localization status](localization.md#ui-translations).

@@ -34,3 +34,9 @@ A single successful library upload opens Image Details after refreshing the coll
 - **Avatar persistence:** The reference is verified by a fresh database read and subsequent authenticated image requests. Browser reload after selecting via the picker remains unverified.
 - **Branding picker:** Tests verify the chooser renders, saving an eligible reference, public preview delivery and reference protection. Browser selection and confirmation remain unverified.
 - **Trash thumbnails:** Trash currently displays a placeholder. Authorized Trash thumbnail delivery is **PLANNED — NOT IMPLEMENTED**. Active private preview routes retain their existing state checks.
+
+## Upload, edit and return
+
+**APPROVED — NOT IMPLEMENTED** for full return-context continuity. Verify the uploaded ID, accurate progress and partial success, safe retries, metadata persistence, unsaved-change protection, inline validation and accessible feedback. On return, preserve relevant search, filters, pagination, selected item, scroll and keyboard focus. Check single and bulk feedback and recovery together.
+
+Browser picker acceptance requires selecting and confirming the correct media ID, saving and reloading the avatar or intended branding field, checking authorized delivery, then removing the assignment and verifying the original remains. Trash thumbnail acceptance requires private authorized delivery, a fallback for missing files and meaningful empty states. Existing restore operations remain part of the regression checks.

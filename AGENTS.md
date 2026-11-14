@@ -31,6 +31,10 @@ A change is done when the normal entry point, authorization boundary, validation
 
 Future phase and step prompts must reference this file and the applicable guides. For multilingual work, define locale, direction, slug uniqueness and inactive-language visibility before exposing content. Add locale-keyed translations when required by an implemented module.
 
+### Functional UX Before Decorative UX
+
+Define a measurable [primary-task contract](docs/design-system.md#primary-task-contract) for every new or revised user-facing screen. Track implementation and release blockers in the [project overview](docs/project-overview.md). A rendered page alone does not establish readiness.
+
 ## Git and releases
 
 Keep changes focused and commits descriptive. Preserve Git history and unrelated files. Obtain explicit authorization before rewriting history or force-pushing. Explain deployment configuration changes in the change summary. Keep .env, secrets, sensitive database dumps, runtime caches, and generated release assets out of Git. Use .env.example for non-sensitive settings and package public/build with releases.

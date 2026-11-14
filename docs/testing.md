@@ -52,3 +52,5 @@ Verify first sign-in to Admin Console for the installer-created Super Admin and 
 Keep the Roles & permissions matrix aligned with the [authorization contracts](authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.
 
 Exercise founder self-demotion, peer deactivation, direct requests, audit events and workspace-to-console navigation with disposable accounts. Include a fixture without an installation record to verify last-active protection independently.
+
+Future implementation prompts must specify relevant PHPUnit and authorization cases, JavaScript checks where applicable, Pint, Vite for frontend changes, git diff --check and real browser QA for critical journeys. Cover mobile widths, keyboard and focus return, Light/Dark/System, LTR/RTL and failure recovery. Verify concurrent mutations through independent connections before claiming concurrency coverage.
