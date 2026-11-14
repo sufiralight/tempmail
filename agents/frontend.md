@@ -27,3 +27,5 @@ Use native language names and registry direction. Keep the homepage source and e
 Preview the effective font in localized controls and isolate addresses and identifiers with LTR Geist Mono.
 
 Keep language editing and the sampled appearance together. Scope preview width and theme controls to the sample.
+
+Keep [Typography Studio](../docs/localization.md#typography-studio) centered on language editing and font comparison. Show active compatible families with the same locale sample. Place catalog mutations under Family settings.

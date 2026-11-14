@@ -58,7 +58,9 @@
             <summary class="cursor-pointer font-medium">Language overrides · Body and heading</summary>
         <div class="mt-3 grid gap-6 md:grid-cols-2">
             @foreach(\App\Administration\Typography::ROLES as $role)
-                @php($assignment = $assignments->get($role))
+                @php
+                    $assignment = $assignments->get($role);
+                @endphp
                 <section>
                     <h3 class="ui-card-title">{{ ucfirst($role) }} font</h3>
                     <p class="ui-help mb-3">{{ $assignment ? 'Custom assignment' : 'Inherited' }} · {{ $fonts[$role]['family'] ?? 'System fallback' }}</p>
@@ -141,28 +143,45 @@
         </form>
     </x-ui.card>
 
-    <h2 class="ui-section-title">Font library</h2>
-    @if($families->isEmpty())
-        <x-ui.empty-state title="No matching font families" description="Try another search or writing system." />
-    @else
-        <x-ui.table caption="Google Fonts catalog">
-            <x-slot:head><tr><th scope="col">Family</th><th scope="col">Coverage</th><th scope="col">Status</th><th scope="col">Actions</th></tr></x-slot:head>
-            @foreach($families as $family)
-                <tr>
-                    <th scope="row"><details><summary class="cursor-pointer">{{ $family->name }}</summary><p class="ui-help mt-1">{{ $family->name === 'Geist Sans' ? 'Local Vite assets' : 'Google Fonts' }} · {{ $family->name }} · Normal{{ in_array($family->name, $italicFamilies, true) ? ', Italic' : '' }} · 400, 600</p></details></th>
-                    <td>{{ implode(', ', $catalog[$family->name] ?? []) }}</td>
-                    <td><x-ui.badge>{{ $family->is_active ? 'Active' : 'Inactive' }}</x-ui.badge> @if($usedFamilies->contains($family->id))<x-ui.badge>Assigned</x-ui.badge>@endif</td>
-                    <td>
-                        <form method="post" action="{{ route('admin.fonts.visibility', $family->id, absolute: false) }}">
-                            @csrf
-                            @method('PATCH')
-                            <input type="hidden" name="is_active" value="{{ $family->is_active ? 0 : 1 }}">
-                            <x-ui.button type="submit" variant="outline" busy-on-submit loading-label="Updating…">{{ $family->is_active ? 'Deactivate' : 'Activate' }}</x-ui.button>
-                        </form>
-                    </td>
-                </tr>
-            @endforeach
-        </x-ui.table>
-    @endif
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <p class="ui-help">Compare compatible fonts using <bdi>{{ $language->native_name }}</bdi>.</p>
+        <x-ui.button :href="route('admin.fonts.index', ['language' => $language->id])" size="sm" variant="outline">Edit language typography</x-ui.button>
+    </div>
+    <section aria-label="Google Fonts catalog" class="grid gap-3 sm:grid-cols-2">
+        @forelse($families as $family)
+            @php
+                $matches = in_array($script, $catalog[$family->name] ?? [], true);
+                $sampleFont = ['family' => $family->name, 'weight' => 400];
+                $sampleStylesheet = $matches && $family->is_active ? app(\App\Administration\Typography::class)->stylesheet([$sampleFont]) : null;
+            @endphp
+            @if($sampleStylesheet)
+                <link rel="stylesheet" href="{{ $sampleStylesheet }}">
+            @endif
+            <article class="min-w-0 rounded-panel border border-border bg-surface p-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="font-semibold">{{ $family->name }}</h2>
+                    @if($family->name === $inherited)<x-ui.badge>Script default</x-ui.badge>
+                    @endif
+                </div>
+                @if($matches && $family->is_active)
+                    <p class="my-4 break-words text-xl leading-relaxed" lang="{{ $language->code }}" dir="{{ $language->direction }}"
+                        style="font-family: '{{ $family->name === 'Geist Sans' ? 'Geist Variable' : $family->name }}', system-ui, sans-serif">{{ config('typography.samples')[$language->code] ?? $language->native_name }}</p>
+                @endif
+                <p class="ui-help mt-2">{{ implode(', ', $catalog[$family->name] ?? []) }}</p>
+                <details class="mt-3 border-t border-border pt-2">
+                    <summary class="cursor-pointer text-sm">Family settings</summary>
+                    <p class="ui-help my-2">{{ $family->name === 'Geist Sans' ? 'Local Vite assets' : 'Google Fonts' }} · 400, 600 · {{ $family->is_active ? 'Active' : 'Inactive' }}{{ $usedFamilies->contains($family->id) ? ' · Assigned' : '' }}</p>
+                    <form method="post" action="{{ route('admin.fonts.visibility', $family->id, absolute: false) }}">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="is_active" value="{{ $family->is_active ? 0 : 1 }}">
+                        <x-ui.button type="submit" variant="outline" size="sm" busy-on-submit loading-label="Updating…">{{ $family->is_active ? 'Deactivate' : 'Activate' }}</x-ui.button>
+                    </form>
+                </details>
+            </article>
+        @empty
+            <x-ui.empty-state title="No matching font families" description="Try another search or writing system." />
+        @endforelse
+    </section>
     @endif
 </x-layouts.workspace>

@@ -50,4 +50,4 @@ Localization exposes separate Languages and Fonts entries. Open a language to re
 
 The Fonts preview uses shared buttons and inputs. Technical email and message IDs remain isolated left-to-right.
 
-Typography Studio uses route-backed Overview, Languages and Font Library navigation. The Languages shortcut retains the selected locale.
+Typography Studio uses route-backed Overview, Languages and Font Library navigation. The Languages shortcut retains the selected locale. Font Library cards display comparable language samples for compatible active families. Catalog mutations are available under Family settings.
