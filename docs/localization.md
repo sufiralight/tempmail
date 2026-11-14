@@ -6,7 +6,7 @@ A single database row references the default. Every console mutation locks that 
 
 ## Public resolution
 
-The landing page resolves an explicit locale path first, then an active session preference, then the active registry default. Unrecognized and inactive explicit locales return 404. If the registry is unavailable before migration, the root uses the configured application locale and localized routes stay closed. Locale codes are matched case-insensitively with hyphens and underscores normalized. The resolved record sets HTML language and direction. Laravel uses APP_FALLBACK_LOCALE for missing translation keys. Public landing copy remains English until translated resources are provided. The console and authentication currently use their existing interface language.
+The landing page resolves an explicit locale path, then the active session preference or account interface preference, then weighted browser preferences, then the active registry default. A regional browser preference can fall back to its base locale. Invalid ranges, wildcards and zero-weight choices do not select a language. If the configured default is inconsistent, the first active registry entry is used. Unrecognized and inactive explicit locales return 404. If the registry is unavailable before migration, the root uses the configured application locale and localized routes stay closed. Locale codes are matched case-insensitively with hyphens and underscores normalized. The resolved record sets HTML language and direction. Laravel uses APP_FALLBACK_LOCALE for missing translation keys. Public landing copy remains English until translated resources are provided. The console and authentication currently use their existing interface language.
 
 The registry is queried on each public request and has no persistent cache to invalidate. The public switcher only shows active records. Changes leave localized content intact.
 
@@ -38,6 +38,16 @@ Missing means no locale-specific value. Draft and Needs review are private. Tran
 
 Editors can access inactive languages, with direction and typography derived from Languages and Fonts. Store long-form CMS content and SEO translations in their owning modules. Back up the database and apply the Languages migration before UI Translations. The Fonts style migration is independent. An unavailable translation schema returns HTTP 503 in the console and falls back to the existing source on public pages. Verify a published translation and a draft in an active locale after deployment.
 
-Localization links appear inside the Admin Console for active, verified Super Admins with settings.manage. See [navigation contexts](components.md#navigation-contexts). The authorized installer records the initial Super Admin's email as verified during account creation.
+The Languages entry appears inside the Admin Console for active, verified Super Admins with settings.manage. See [navigation contexts](components.md#navigation-contexts). The authorized installer records the initial Super Admin's email as verified during account creation.
 
 As verified on 2026-11-14, the local database has the language and base typography migrations. Fonts style and UI Translations are pending. Normal font assignments work without the style column. Italic requires it, and UI Translations returns HTTP 503 until its schema exists. Verify the target independently and follow the [schema recovery procedure](deployment.md#schema-recovery).
+
+## Homepage publishing
+
+Open a language under Languages and select Homepage content. The editor shows the canonical English configuration beside editable text. Save draft writes separate values without replacing published copy. Preview shows the saved draft on a protected, uncached homepage. Publish applies all submitted fields in one transaction, checks the editor revision and uses canonical English for blank fields. Publishing does not activate an inactive language. The list counts only published, nonempty values for registered homepage keys.
+
+The public selector saves an intentional choice in the existing session. Opening a localized URL leaves that preference intact. Localized responses are private and vary by Accept-Language and Cookie. The public homepage uses the published dictionary and immutable English fallback.
+
+The legacy UI Translations URL redirects to Languages when the new editor schema is available. Existing filtered links and writes retain their route and authorization. The additive homepage draft migration requires the UI Translations tables. Apply both during a controlled release on an installation missing those tables. Older published values remain in place.
+
+Run isolated browser QA for browser preferences, manual switching, direction, draft preview, publishing and stale-editor recovery.

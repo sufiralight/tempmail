@@ -34,9 +34,11 @@
         @if(request()->attributes->get('active_languages')?->count() > 1)
             <nav aria-label="{{ $ui->text('navigation.languages') }}" class="flex flex-wrap gap-3">
                 @foreach(request()->attributes->get('active_languages') as $language)
-                    <a class="underline underline-offset-4" href="{{ route('locale.home', $language->code, absolute: false) }}"
-                        lang="{{ $language->code }}" dir="{{ $language->direction }}"
-                        @if(app()->getLocale() === $language->code) aria-current="page" @endif>{{ $language->native_name }}</a>
+                    <form method="post" action="{{ route('locale.preference', $language->code, absolute: false) }}">
+                        @csrf
+                        <x-ui.button type="submit" size="sm" variant="ghost" :lang="$language->code" :dir="$language->direction"
+                            :aria-current="app()->getLocale() === $language->code ? 'page' : null">{{ $language->native_name }}</x-ui.button>
+                    </form>
                 @endforeach
             </nav>
         @endif

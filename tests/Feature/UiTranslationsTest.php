@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Administration\UiTranslations;
 use App\Models\User;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,6 +30,35 @@ final class UiTranslationsTest extends TestCase
     {
         (new Filesystem)->deleteDirectory($this->workspace);
         parent::tearDown();
+    }
+
+    public function test_homepage_draft_preview_publish_and_conflicting_revision(): void
+    {
+        $language = DB::table('languages')->where('code', 'es')->value('id');
+        DB::table('languages')->where('id', $language)->update(['is_active' => true]);
+        $url = "/admin/languages/{$language}/homepage";
+        $translations = app(UiTranslations::class);
+        $entries = $translations->homepage($language);
+        $values = $entries->pluck('value', 'id')->all();
+        $key = $entries->firstWhere('identifier', 'home.headline')->id;
+        $values[$key] = 'Correo temporal';
+        $this->get($url.'/preview')->assertRedirect('/login');
+        $this->actingAs(User::factory()->create(['is_super_admin' => true]));
+        $this->get($url)->assertOk()->assertSee('English source');
+        $this->get('/admin/ui-translations')->assertRedirect('/admin/languages');
+        $payload = ['action' => 'draft', 'revision' => $translations->revision($entries), 'values' => $values];
+        $this->patch($url, $payload)->assertSessionHasNoErrors();
+        $this->get('/locale/es')->assertDontSee('Correo temporal');
+        $this->get($url.'/preview')->assertOk()->assertSee('Correo temporal');
+        $this->patchJson($url, array_replace($payload, ['action' => 'publish']))->assertUnprocessable()->assertJsonValidationErrors('revision');
+        $payload['revision'] = $translations->revision($translations->homepage($language));
+        $this->patch($url, array_replace($payload, ['action' => 'publish']))->assertSessionHasNoErrors();
+        $this->get('/locale/es')->assertSee('Correo temporal');
+        $this->get('/admin/languages?q=Spanish')->assertSee('1 / '.count($values).' published');
+        $payload['revision'] = $translations->revision($translations->homepage($language));
+        $payload['values'][$key] = 'Nuevo borrador';
+        $this->patch($url, $payload)->assertSessionHasNoErrors();
+        $this->get('/locale/es')->assertSee('Correo temporal')->assertDontSee('Nuevo borrador');
     }
 
     public function test_translation_write_requires_a_csrf_token(): void

@@ -37,7 +37,7 @@
                 <x-slot:head>
                     <tr>
                         <th scope="col"><input type="checkbox" aria-label="Select all languages on this page" x-bind:checked="selected.length === {{ $languages->count() }}" x-on:change="selected = $event.target.checked ? Array.from($root.querySelectorAll('[name=&quot;languages[]&quot;]'), item => item.value) : []"></th>
-                        @foreach(['Language', 'Native name', 'Code', 'Direction', 'Status', 'Default', 'Actions'] as $heading)
+                        @foreach(['Language', 'Native name', 'Code', 'Direction', 'Status', 'Default', 'Homepage', 'Actions'] as $heading)
                             <th scope="col">{{ $heading }}</th>
                         @endforeach
                     </tr>
@@ -51,7 +51,8 @@
                         <td>{{ strtoupper($language->direction) }}</td>
                         <td><x-ui.badge>{{ $language->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
                         <td>{{ $defaultId === (int) $language->id ? 'Default' : '—' }}</td>
-                        <td><x-ui.button :href="route('admin.languages.show', $language->id)" variant="ghost">View and edit</x-ui.button></td>
+                        <td>{{ $progress === null ? 'Schema unavailable' : ($progress[$language->id] ?? 0).' / '.$homepageTotal.' published' }}</td>
+                        <td><x-ui.button :href="route('admin.languages.homepage', $language->id)" variant="ghost">Homepage content</x-ui.button><x-ui.button :href="route('admin.languages.show', $language->id)" variant="ghost">View and edit</x-ui.button></td>
                     </tr>
                 @endforeach
             </x-ui.table>

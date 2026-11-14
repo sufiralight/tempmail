@@ -18,7 +18,7 @@
         ];
 
         if ($user->can('settings.manage')) {
-            $groups['Localization'] = [['admin.languages.index', 'Languages', 'settings', 'admin.languages.*'], ['admin.fonts.index', 'Fonts', 'type', 'admin.fonts.*'], ['admin.ui-translations.index', 'UI Translations', 'type', 'admin.ui-translations.*']];
+            $groups['Localization'] = [['admin.languages.index', 'Languages', 'settings', 'admin.languages.*', 'admin.fonts.*', 'admin.ui-translations.*']];
         }
 
         if (! request()->routeIs('admin', 'admin.*')) {
@@ -36,7 +36,7 @@
                 @foreach($items as $item)
                     @php
                         [$route, $label, $icon] = $item;
-                        $current = request()->routeIs($route, $item[3] ?? $route);
+                        $current = request()->routeIs($route, ...array_slice($item, 3));
                         $section = $route === 'admin.users' && request()->routeIs('admin.roles');
                     @endphp
                     <li>

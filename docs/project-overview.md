@@ -36,3 +36,5 @@ The installer and account authentication are implemented with isolated regressio
 Temporary address generation and inbox/IMAP synchronization are **Planned**. The core journey generates and displays a temporary address, receives messages, renders messages safely, and enforces access and expiry with loading, empty, error and expired states. The approved direction is hosting mailboxes with IMAP, multiple system and custom domains, simple domain CRUD and bounded shared-hosting scheduled synchronization. Automated DNS verification and MX/TXT management are optional outside this scope. Dashboard currently provides account and workspace functions.
 
 Branding provides contextual draft previews and transactional publishing. See [Branding workflow](media-library.md#branding-workflow) for the contract and [Testing](testing.md) for verification.
+
+Languages includes the homepage editor and browser locale negotiation. Local homepage publishing still requires the pending UI Translations and homepage draft migrations.

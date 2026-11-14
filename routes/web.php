@@ -126,6 +126,11 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
                 Route::patch('/{family}/visibility', 'visibility')->whereNumber('family')->name('visibility');
             });
         });
+        Route::middleware('can:settings.manage')->group(function (): void {
+            Route::get('/languages/{language}/homepage', [UiTranslationController::class, 'homepage'])->whereNumber('language')->name('admin.languages.homepage');
+            Route::get('/languages/{language}/homepage/preview', [UiTranslationController::class, 'preview'])->whereNumber('language')->name('admin.languages.preview');
+            Route::patch('/languages/{language}/homepage', [UiTranslationController::class, 'saveHomepage'])->whereNumber('language')->middleware('throttle:20,1')->name('admin.languages.homepage.save');
+        });
         Route::prefix('languages')->name('admin.languages.')->middleware('can:settings.manage')->controller(LanguageController::class)->group(function (): void {
             Route::get('/', 'index')->name('index');
             Route::get('/{language}', 'show')->whereNumber('language')->name('show');
@@ -142,6 +147,7 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
 Route::get('/branding/{slot}', [BrandingController::class, 'asset'])
     ->whereIn('slot', BrandingController::SLOTS)->name('branding.asset');
 
+Route::post('/locale/{locale}/preference', [ResolveLocale::class, 'select'])->name('locale.preference');
 Route::view('/', 'welcome')->middleware(ResolveLocale::class)->name('home');
 Route::view('/locale/{locale}', 'welcome')->where('locale', '[A-Za-z]{2,3}(?:[-_][A-Za-z]{2})?')
     ->middleware(ResolveLocale::class)->name('locale.home');

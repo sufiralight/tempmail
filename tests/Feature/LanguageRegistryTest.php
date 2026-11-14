@@ -32,6 +32,18 @@ final class LanguageRegistryTest extends TestCase
         parent::tearDown();
     }
 
+    public function test_browser_language_preference_and_explicit_url_precedence(): void
+    {
+        DB::table('languages')->whereIn('code', ['es', 'ar'])->update(['is_active' => true]);
+        $this->get('/', ['Accept-Language' => 'ar;q=0.4,es-MX;q=0.9'])->assertSee('lang="es" dir="ltr"', false);
+        $this->get('/', ['Accept-Language' => 'es;q=0,es-MX,ar;q=0.5'])->assertSee('lang="ar" dir="rtl"', false);
+        $this->get('/', ['Accept-Language' => 'fr-CA,unknown,*'])->assertSee('lang="en" dir="ltr"', false);
+        $this->post('/locale/es/preference')->assertRedirect('/locale/es');
+        $this->get('/locale/ar')->assertSee('lang="ar" dir="rtl"', false);
+        $this->get('/', ['Accept-Language' => 'ar'])->assertSee('lang="es" dir="ltr"', false);
+        $this->post('/locale/fr/preference')->assertNotFound();
+    }
+
     public function test_registry_is_seeded_and_reseeding_preserves_changes(): void
     {
         $this->assertDatabaseCount('languages', 30);

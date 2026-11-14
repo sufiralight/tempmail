@@ -21,3 +21,5 @@ Keep the Roles & permissions matrix aligned with the [authorization contracts](.
 Follow the [workspace and console navigation contexts](../docs/components.md#navigation-contexts).
 
 Use the [primary-task contract](../docs/design-system.md#primary-task-contract) to prioritize the main action, preserve task context and define failure recovery.
+
+Use native language names and registry direction. Keep the homepage source and editable localized fields visible together where space permits.

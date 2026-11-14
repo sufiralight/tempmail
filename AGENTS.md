@@ -54,3 +54,5 @@ Preserve the installer-recorded Founder Super Admin and the independent last act
 Use the [navigation contexts](docs/components.md#navigation-contexts) and [deployment checks](docs/deployment.md#releases-backups-and-troubleshooting) when changing console access or schema-backed features.
 
 Apply the [Branding primary-task contract](docs/media-library.md#branding-workflow) when changing brand assets or their public delivery.
+
+Keep [homepage publishing](docs/localization.md#homepage-publishing) separate from public locale resolution. Preserve canonical English, authorization and explicit visitor preferences.

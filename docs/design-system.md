@@ -60,3 +60,5 @@ For each new or revised screen, document the primary task and action, successful
 Use Vercel’s hierarchy to make location, purpose, primary action, required attention and next step evident. Use Vite’s responsiveness principles to preserve relevant query, page, scroll and focus context and provide immediate async feedback. Use Stripe’s transaction clarity to identify pending work, saved changes, failures, incomplete items and safe retry paths. Prevent duplicate submissions and confirm only completed operations.
 
 Branding pairs asset settings with contextual previews on desktop and places each preview after its settings on narrow screens.
+
+The homepage editor pairs canonical English with localized fields and stacks them at narrow widths. Draft and publish have distinct actions.

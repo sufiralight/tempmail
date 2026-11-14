@@ -17,3 +17,5 @@ See [UI Translations](../docs/localization.md#ui-translations) for key registrat
 Keep the Roles & permissions matrix aligned with the [authorization contracts](../docs/authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.
 
 Serialize role and account lifecycle changes and enforce [founder and last-admin protection](../docs/authorization.md#founder-super-admin) at the mutation boundary.
+
+Keep homepage draft preview behind verified settings.manage authorization with private no-store responses.

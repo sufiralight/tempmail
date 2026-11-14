@@ -15,3 +15,5 @@ See [UI Translations](../docs/localization.md#ui-translations) for key registrat
 Keep the Roles & permissions matrix aligned with the [authorization contracts](../docs/authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.
 
 Require evidence for the [primary-task contract](../docs/design-system.md#primary-task-contract). Record skipped, blocked and untested cases separately. Sequential tests do not establish concurrency behavior.
+
+Exercise locale precedence, zero-weight ranges, per-field fallback and stale publishing revisions in isolated tests.

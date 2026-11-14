@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Administration\AuditLog;
 use App\Administration\LanguageRegistry;
+use App\Administration\UiTranslations;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class LanguageController
@@ -31,8 +33,19 @@ final class LanguageController
             $query->where('direction', $filters['direction']);
         }
 
+        $languages = $query->orderBy('sort_order')->orderBy('id')->paginate(15)->withQueryString();
+        $progress = app(UiTranslations::class)->ready()
+            ? DB::table('ui_translation_values as translation')
+                ->join('ui_translation_keys as catalog', 'catalog.id', '=', 'translation.key_id')
+                ->whereIn('catalog.identifier', array_keys(config('ui_translations')))
+                ->whereIn('translation.language_id', $languages->getCollection()->pluck('id'))
+                ->where('translation.status', 'published')->where('translation.value', '<>', '')
+                ->groupBy('translation.language_id')->selectRaw('translation.language_id, COUNT(*) as total')
+                ->pluck('total', 'language_id')
+            : null;
+
         return view('workspace.languages', [
-            'languages' => $query->orderBy('sort_order')->orderBy('id')->paginate(15)->withQueryString(),
+            'languages' => $languages, 'progress' => $progress, 'homepageTotal' => count(config('ui_translations')),
             'defaultId' => (int) $this->registry->defaults()->value('language_id'),
             'total' => $total, 'active' => $active, 'filters' => $filters,
         ]);

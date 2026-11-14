@@ -17,3 +17,5 @@ See [UI Translations](../docs/localization.md#ui-translations) for key registrat
 Keep the Roles & permissions matrix aligned with the [authorization contracts](../docs/authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.
 
 Keep the [implementation priorities](../docs/project-overview.md#implementation-priorities) and [schema recovery procedure](../docs/deployment.md#schema-recovery) aligned with the deployed module contracts.
+
+Reuse the localization registry and translation value store for [homepage content](../docs/localization.md#homepage-publishing).

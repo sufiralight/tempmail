@@ -56,3 +56,5 @@ Exercise founder self-demotion, peer deactivation, direct requests, audit events
 Future implementation prompts must specify relevant PHPUnit and authorization cases, JavaScript checks where applicable, Pint, Vite for frontend changes, git diff --check and real browser QA for critical journeys. Cover mobile widths, keyboard and focus return, Light/Dark/System, LTR/RTL and failure recovery. Verify concurrent mutations through independent connections before claiming concurrency coverage.
 
 Branding browser QA covers four independent draft fields, fallback, atomic save, validation recovery and published results after reload. Exercise picker cancellation, keyboard focus, RTL and display across themes.
+
+Regression-test homepage drafts against already published values, explicit publish, private previews and concurrent revision conflicts. Check browser locale precedence and RTL in the browser matrix.
