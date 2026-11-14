@@ -48,3 +48,5 @@ For Typography 2.0, verify an italic Roboto assignment persists and that public 
 
 See [UI Translations](localization.md#ui-translations) for key registration, status workflow, escaping and deployment checks.
 Verify first sign-in to Admin Console for the installer-created Super Admin and require fresh verification after an email change.
+
+Keep the Roles & permissions matrix aligned with the [authorization contracts](authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.

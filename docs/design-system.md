@@ -48,3 +48,5 @@ See [Localization](localization.md) for the language registry, public locale rul
 For font catalog policy, locale typography, and deployment checks, see [Fonts Management](localization.md#fonts-management).
 
 See [UI Translations](localization.md#ui-translations) for key registration, status workflow, escaping and deployment checks.
+
+Keep the Roles & permissions matrix aligned with the [authorization contracts](authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.

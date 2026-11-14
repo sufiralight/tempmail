@@ -561,6 +561,7 @@ class AuthenticationTest extends TestCase
         $this->actingAs($member)->get('/dashboard')->assertOk()->assertSee('Unique Member')
             ->assertSee('data-page-progress-root', false)->assertDontSee('href="/admin/users"', false);
         $this->get('/admin/users')->assertForbidden();
+        $this->get('/admin/roles')->assertForbidden();
         $this->actingAs($admin)->get('/admin/users?q=Unique&role=user')->assertOk()->assertSee('Unique Member');
         $this->get('/admin/users?page=2')->assertOk()->assertSee('Page 2');
         $this->get('/admin/settings')->assertOk();
@@ -568,7 +569,15 @@ class AuthenticationTest extends TestCase
         $this->patch('/admin/users/'.$admin->id, ['role' => 'super_admin', 'active' => true, 'confirmed' => true])->assertForbidden();
         $this->get('/admin/audit-logs')->assertForbidden();
 
-        $this->actingAs($owner)->get('/admin/roles')->assertOk()->assertSee('Super Admin');
+        $this->get('/admin/roles')->assertForbidden();
+        $this->actingAs($owner)->get('/admin/roles')->assertOk()
+            ->assertSee('Permission matrix')
+            ->assertSee('23 accounts')
+            ->assertSee('1 account')
+            ->assertSee('Manage UI translations')
+            ->assertSee('Granted')
+            ->assertSee('Denied')
+            ->assertDontSee('dashboard.view');
         $this->patch('/admin/users/'.$owner->id, ['role' => 'user', 'active' => false, 'confirmed' => true])
             ->assertSessionHasErrors('role');
         $this->assertTrue($owner->fresh()->isSuperAdmin());

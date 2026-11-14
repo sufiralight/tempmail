@@ -6,7 +6,7 @@ The installer-created Super Admin retains authority through the existing is_supe
 | --- | --- |
 | user | dashboard.view |
 | admin | dashboard.view, admin.access, users.view, settings.view |
-| super_admin | All admin permissions plus users.manage, roles.manage, settings.manage, audit.view |
+| super_admin | All admin permissions plus users.manage, roles.manage, settings.manage, audit.view, media.audit |
 
 Every console route requires an active authenticated account, verified email, and the relevant Gate. User mutations also use UserPolicy. Public signup creates active members. Privileged fields are excluded from mass assignment. Disabled accounts cannot sign in and lose access on the next protected request.
 
@@ -15,3 +15,5 @@ The Super Admin can change roles and activation with explicit confirmation. A tr
 The console exposes /admin, /admin/users, /admin/users/{user}, /admin/roles, /admin/settings and /admin/audit-logs. Role definitions are fixed in code. Settings persist the console display name. Administrative audit rows record actor and target IDs, action, timestamp and allowlisted metadata. They have no public write route.
 
 Run the additive workspace administration migration in a controlled release before opening authenticated routes on existing installations. New installs apply it through the existing installer. See [Database](database.md) and [Authentication](authentication.md).
+
+The Roles & permissions page derives its matrix from WorkspaceRole and counts assigned accounts, including inactive accounts, with one grouped database query. The Languages, Fonts and UI Translations rows describe routes guarded by settings.manage. Personal profile and media operations retain their ownership and state checks. Assign roles through Users Management.
