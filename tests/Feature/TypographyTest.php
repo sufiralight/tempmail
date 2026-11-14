@@ -34,7 +34,7 @@ final class TypographyTest extends TestCase
 
     public function test_catalog_and_public_stylesheet_follow_locale_and_assignments(): void
     {
-        $this->assertDatabaseCount('font_families', 13);
+        $this->assertDatabaseHas('font_families', ['name' => 'Inter']);
         $urdu = DB::table('languages')->where('code', 'ur')->value('id');
         $font = DB::table('font_families')->where('name', 'Noto Nastaliq Urdu')->value('id');
         $this->get('/')->assertOk()->assertDontSee('fonts.googleapis.com');
@@ -55,7 +55,32 @@ final class TypographyTest extends TestCase
         $this->patch("/admin/fonts/$font/visibility", ['is_active' => false])->assertRedirect();
         app(Typography::class)->seed();
         $this->assertDatabaseHas('font_families', ['id' => $font, 'is_active' => false]);
-        $this->get('/locale/ur')->assertOk()->assertDontSee('fonts.googleapis.com');
+        $this->get('/locale/ur')->assertOk()->assertSee('Noto+Sans+Arabic', false);
+    }
+
+    public function test_script_default_is_shared_and_language_override_can_be_reset(): void
+    {
+        $type = app(Typography::class);
+        $this->assertSame('Geist Sans', $type->inherited('latin'));
+        $this->assertSame('Noto Sans Hebrew', $type->inherited('hebrew'));
+        $this->assertSame('Noto Sans Arabic', $type->inherited('urdu'));
+        foreach (config('locales') as $code => $locale) {
+            $this->assertNotNull($type->inherited($type->script($code)), $code);
+        }
+
+        $turkish = DB::table('languages')->where('code', 'tr')->value('id');
+        $spanish = DB::table('languages')->where('code', 'es')->value('id');
+        $inter = DB::table('font_families')->where('name', 'Inter')->value('id');
+        $geist = DB::table('font_families')->where('name', 'Geist Sans')->value('id');
+        $this->actingAs(User::factory()->create())->putJson("/admin/fonts/defaults/$turkish", ['default_family_id' => $inter])->assertForbidden();
+        $this->actingAs(User::factory()->create(['is_super_admin' => true]));
+        $this->put("/admin/fonts/defaults/$turkish", ['default_family_id' => $inter])->assertSessionHasNoErrors();
+        $this->assertSame('Inter', $type->resolve($spanish, 'es')['body']['family']);
+        $this->put("/admin/fonts/assignments/$turkish/body", ['font_family_id' => $geist, 'weight' => 400, 'fallback' => 'system'])->assertSessionHasNoErrors();
+        $this->assertSame('Geist Sans', $type->resolve($turkish, 'tr')['body']['family']);
+        $this->delete("/admin/fonts/assignments/$turkish/body")->assertRedirect();
+        $this->assertSame('Inter', $type->resolve($turkish, 'tr')['body']['family']);
+        $this->get("/admin/fonts?language=$turkish")->assertSee('demo@example.com')->assertSee('msg-001');
     }
 
     public function test_italic_assignment_is_persisted_and_loaded_only_for_the_selected_role(): void

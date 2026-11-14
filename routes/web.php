@@ -121,6 +121,7 @@ Route::middleware(['auth', 'auth.session', RequireActiveAccount::class, TrackAcc
         Route::prefix('fonts')->name('admin.fonts.')->middleware('can:settings.manage')->controller(FontController::class)->group(function (): void {
             Route::get('/', 'index')->name('index');
             Route::middleware('throttle:20,1')->group(function (): void {
+                Route::put('/defaults/{language}', 'saveDefault')->whereNumber('language')->name('default');
                 Route::put('/assignments/{language}/{role}', 'assign')->whereNumber('language')->name('assign');
                 Route::delete('/assignments/{language}/{role}', 'reset')->whereNumber('language')->name('reset');
                 Route::patch('/{family}/visibility', 'visibility')->whereNumber('family')->name('visibility');

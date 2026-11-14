@@ -2,8 +2,13 @@
 
 return [
     'families' => [
+        'Geist Sans' => ['latin', 'latin-ext', 'vietnamese'],
+        'Inter' => ['latin', 'latin-ext', 'vietnamese'],
+        'Noto Sans' => ['cyrillic', 'greek'],
+        'Noto Naskh Arabic' => ['arabic'],
+        'Noto Kufi Arabic' => ['arabic'],
         'Roboto' => ['latin', 'latin-ext', 'cyrillic', 'vietnamese'],
-        'Noto Sans Arabic' => ['arabic'],
+        'Noto Sans Arabic' => ['arabic', 'urdu'],
         'Noto Nastaliq Urdu' => ['urdu'],
         'Noto Sans Hebrew' => ['hebrew'],
         'Noto Sans Devanagari' => ['devanagari'],
@@ -16,14 +21,25 @@ return [
         'Noto Sans SC' => ['simplified-chinese'],
         'Noto Sans TC' => ['traditional-chinese'],
     ],
+    'defaults' => [
+        'latin' => 'Geist Sans', 'latin-ext' => 'Geist Sans', 'vietnamese' => 'Geist Sans',
+        'cyrillic' => 'Noto Sans', 'greek' => 'Noto Sans', 'arabic' => 'Noto Sans Arabic',
+        'urdu' => 'Noto Sans Arabic', 'hebrew' => 'Noto Sans Hebrew', 'devanagari' => 'Noto Sans Devanagari',
+        'bengali' => 'Noto Sans Bengali', 'tamil' => 'Noto Sans Tamil', 'telugu' => 'Noto Sans Telugu',
+        'thai' => 'Noto Sans Thai', 'japanese' => 'Noto Sans JP', 'korean' => 'Noto Sans KR',
+        'simplified-chinese' => 'Noto Sans SC', 'traditional-chinese' => 'Noto Sans TC',
+    ],
     'scripts' => [
-        'tr' => 'latin-ext', 'pl' => 'latin-ext', 'ru' => 'cyrillic', 'uk' => 'cyrillic',
+        'el' => 'greek', 'tr' => 'latin', 'pl' => 'latin', 'ru' => 'cyrillic', 'uk' => 'cyrillic',
         'ar' => 'arabic', 'fa' => 'arabic', 'ur' => 'urdu', 'he' => 'hebrew',
         'hi' => 'devanagari', 'bn' => 'bengali', 'ta' => 'tamil', 'te' => 'telugu',
         'th' => 'thai', 'vi' => 'vietnamese', 'ja' => 'japanese', 'ko' => 'korean',
         'zh-CN' => 'simplified-chinese', 'zh-TW' => 'traditional-chinese',
     ],
     'samples' => [
+        'en' => 'Temp Mail · İı Şş Ğğ · Español · Français',
+        'es' => 'Crea una dirección de correo temporal.',
+        'fr' => 'Créez une adresse e-mail temporaire.',
         'tr' => 'Pijamalı hasta yağız şoföre çabucak güvendi.',
         'ru' => 'Съешь ещё этих мягких французских булок.',
         'uk' => 'Українські літери: Ґ, Є, І, Ї.',

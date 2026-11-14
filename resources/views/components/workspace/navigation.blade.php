@@ -18,7 +18,10 @@
         ];
 
         if ($user->can('settings.manage')) {
-            $groups['Localization'] = [['admin.languages.index', 'Languages', 'settings', 'admin.languages.*', 'admin.fonts.*', 'admin.ui-translations.*']];
+            $groups['Localization'] = [
+                ['admin.languages.index', 'Languages', 'settings', 'admin.languages.*', 'admin.ui-translations.*'],
+                ['admin.fonts.index', 'Fonts', 'type', 'admin.fonts.*'],
+            ];
         }
 
         if (! request()->routeIs('admin', 'admin.*')) {

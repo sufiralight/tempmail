@@ -19,3 +19,5 @@ Keep the Roles & permissions matrix aligned with the [authorization contracts](.
 Keep the [implementation priorities](../docs/project-overview.md#implementation-priorities) and [schema recovery procedure](../docs/deployment.md#schema-recovery) aligned with the deployed module contracts.
 
 Reuse the localization registry and translation value store for [homepage content](../docs/localization.md#homepage-publishing).
+
+Resolve typography through the language registry and existing font assignments. Script defaults are additive and independently deployed.

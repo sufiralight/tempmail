@@ -23,3 +23,5 @@ Follow the [workspace and console navigation contexts](../docs/components.md#nav
 Use the [primary-task contract](../docs/design-system.md#primary-task-contract) to prioritize the main action, preserve task context and define failure recovery.
 
 Use native language names and registry direction. Keep the homepage source and editable localized fields visible together where space permits.
+
+Preview the effective font in localized controls and isolate addresses and identifiers with LTR Geist Mono.

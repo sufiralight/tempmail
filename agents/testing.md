@@ -17,3 +17,5 @@ Keep the Roles & permissions matrix aligned with the [authorization contracts](.
 Require evidence for the [primary-task contract](../docs/design-system.md#primary-task-contract). Record skipped, blocked and untested cases separately. Sequential tests do not establish concurrency behavior.
 
 Exercise locale precedence, zero-weight ranges, per-field fallback and stale publishing revisions in isolated tests.
+
+Verify script inheritance, language overrides, reset and incompatible assignments. Browser checks must verify loaded font assets and mixed-direction controls.

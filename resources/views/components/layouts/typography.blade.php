@@ -7,7 +7,7 @@
 <style>
     {{ $preview ? '.font-preview' : ':root' }} {
         @foreach($fonts as $role => $font)
-            --font-{{ $role }}: @if($font['family']) '{{ $font['family'] }}', @endif 'Geist Variable', {{ $font['fallback'] }};
+            --font-{{ $role }}: @if($font['family']) '{{ $font['family'] === 'Geist Sans' ? 'Geist Variable' : $font['family'] }}', @endif {{ $font['fallback'] }};
             --style-{{ $role }}: {{ $font['style'] }};
             --weight-{{ $role }}: {{ $font['weight'] }};
         @endforeach

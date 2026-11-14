@@ -58,3 +58,5 @@ Future implementation prompts must specify relevant PHPUnit and authorization ca
 Branding browser QA covers four independent draft fields, fallback, atomic save, validation recovery and published results after reload. Exercise picker cancellation, keyboard focus, RTL and display across themes.
 
 Regression-test homepage drafts against already published values, explicit publish, private previews and concurrent revision conflicts. Check browser locale precedence and RTL in the browser matrix.
+
+Typography QA covers script compatibility, saved inheritance, draft-only preview, actual font load, RTL isolation, Nastaliq line height and mobile clipping.

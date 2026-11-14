@@ -39,7 +39,26 @@ final class Typography
 
     public function script(string $locale): string
     {
-        return config('typography.scripts')[$locale] ?? 'latin';
+        return config('typography.scripts')[$locale] ?? (isset(config('locales')[$locale]) ? 'latin' : 'unknown');
+    }
+
+    public function defaultsReady(): bool
+    {
+        return once(fn (): bool => Schema::hasTable('font_script_defaults'));
+    }
+
+    public function inherited(string $script): ?string
+    {
+        $saved = $this->defaultsReady() ? DB::table('font_script_defaults as defaults')
+            ->join('font_families as family', 'family.id', '=', 'defaults.font_family_id')
+            ->where('defaults.script', $script)->where('family.is_active', true)->value('family.name') : null;
+        $default = config('typography.defaults')[$script] ?? null;
+        if ($saved !== null && in_array($script, config('typography.families')[$saved] ?? [], true)) {
+            return $saved;
+        }
+
+        return $default === 'Geist Sans' || ($default && DB::table('font_families')->where('name', $default)->where('is_active', true)->exists())
+            ? $default : null;
     }
 
     public function resolve(int $languageId, string $locale): array
@@ -51,21 +70,15 @@ final class Typography
             ->get()->keyBy('role');
         $script = $this->script($locale);
         $catalog = config('typography.families');
-        $inherited = null;
-
-        if (! in_array($script, ['latin', 'latin-ext', 'cyrillic', 'vietnamese'], true)) {
-            foreach (DB::table('font_families')->where('is_active', true)->pluck('name') as $name) {
-                if (in_array($script, $catalog[$name] ?? [], true)) {
-                    $inherited = $name;
-                    break;
-                }
-            }
-        }
+        $inherited = $this->inherited($script);
 
         $fonts = [];
         foreach (self::ROLES as $role) {
             $assignment = $assignments->get($role);
             $name = $assignment === null ? $inherited : ($assignment->is_active ? $assignment->name : null);
+            if ($name !== null && ! in_array($script, $catalog[$name] ?? [], true)) {
+                $name = $inherited;
+            }
             $fonts[$role] = [
                 'family' => in_array($script, $catalog[$name] ?? [], true) ? $name : null,
                 'style' => $name === null || ! in_array($assignment->style ?? 'normal', $this->styles($name), true) ? 'normal' : ($assignment->style ?? 'normal'),
@@ -81,7 +94,7 @@ final class Typography
     {
         $families = [];
         foreach ($fonts as $font) {
-            if (isset(config('typography.families')[$font['family']]) && in_array($font['weight'], [400, 600], true)) {
+            if ($font['family'] !== 'Geist Sans' && isset(config('typography.families')[$font['family']]) && in_array($font['weight'], [400, 600], true)) {
                 $style = $font['style'] ?? 'normal';
                 if (in_array($style, $this->styles($font['family']), true)) {
                     $families[$font['family']][$style][$font['weight']] = $font['weight'];

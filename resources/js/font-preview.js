@@ -24,7 +24,7 @@ export function fontPreview() {
             const fallback = fallbackStacks[form.elements.fallback.value] ?? fallbackStacks.system;
             const sample = this.$refs.sample;
 
-            if (name && /^[A-Za-z ]+$/.test(name) && ['400', '600'].includes(weight)) {
+            if (name && name !== 'Geist Sans' && /^[A-Za-z ]+$/.test(name) && ['400', '600'].includes(weight)) {
                 const url = new URL('https://fonts.googleapis.com/css2');
                 url.searchParams.set('family', name + (style === 'italic' ? ':ital,wght@1,' : ':wght@') + weight);
                 url.searchParams.set('display', 'swap');
@@ -45,9 +45,9 @@ export function fontPreview() {
                     }, { once: true });
                     document.head.append(link);
                 }
-                sample.style.setProperty('--font-' + role, '"' + name + '", Geist Variable, ' + fallback);
+                sample.style.setProperty('--font-' + role, '"' + name + '", ' + fallback);
             } else {
-                sample.style.setProperty('--font-' + role, 'Geist Variable, ' + fallback);
+                sample.style.setProperty('--font-' + role, (name === 'Geist Sans' ? 'Geist Variable, ' : '') + fallback);
             }
             sample.style.setProperty('--style-' + role, style);
             sample.style.setProperty('--weight-' + role, weight);

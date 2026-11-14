@@ -61,6 +61,8 @@ class AuthenticationTest extends TestCase
         $this->assertActiveNavigation("/admin/media/{$id}", '/admin/media');
         $this->assertActiveNavigation('/admin/settings/branding', '/admin/settings/branding');
         $this->assertActiveNavigation('/admin', '/admin');
+        $this->assertActiveNavigation('/admin/fonts', '/admin/fonts');
+        $this->assertActiveNavigation('/admin/languages', '/admin/languages');
         $this->get("/admin/media/{$id}")->assertOk()->assertDontSee('Save details');
         $this->actingAs($owner)->get('/admin/settings/branding')->assertOk()->assertSee('Choose image');
         $branding = ['logo' => $id, 'dark-logo' => $id, 'favicon' => $id, 'social' => $id];

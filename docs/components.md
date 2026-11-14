@@ -36,7 +36,7 @@ Check existing components before adding a pattern. Extend native slots and props
 
 ## Navigation contexts
 
-The User Workspace lists Dashboard and Media Library. Eligible accounts see one Admin Console entry. The Admin Console adds authorized administration links and groups Languages, Fonts, and UI Translations under Localization for accounts with settings.manage. Both contexts use the same authenticated session.
+The User Workspace lists Dashboard and Media Library. Eligible accounts see one Admin Console entry. The Admin Console adds authorized administration links and groups Languages and Fonts under Localization for accounts with settings.manage. Both contexts use the same authenticated session.
 
 The desktop sidebar and mobile drawer render the same link configuration. Mark the active destination with aria-current and use named route families for nested screens. Keep the drawer keyboard-operable with Escape and focus return. The workspace navigation regression is covered by the authenticated shell test. See [Testing](testing.md#browser-qa-matrix) for browser checks.
 
@@ -46,4 +46,6 @@ Users is the primary Admin Console destination for accounts. Its secondary navig
 
 The media picker emits media-selected with ID, preview, filename and metadata, and media-cleared when its selection is removed. Branding scopes each listener to its own field.
 
-Localization exposes Languages as its primary entry. Open a language to reach Homepage content and Fonts.
+Localization exposes separate Languages and Fonts entries. Open a language to reach Homepage content or jump to Fonts with that language selected.
+
+The Fonts preview uses shared buttons and inputs. Technical email and message IDs remain isolated left-to-right.

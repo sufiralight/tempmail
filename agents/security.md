@@ -19,3 +19,5 @@ Keep the Roles & permissions matrix aligned with the [authorization contracts](.
 Serialize role and account lifecycle changes and enforce [founder and last-admin protection](../docs/authorization.md#founder-super-admin) at the mutation boundary.
 
 Keep homepage draft preview behind verified settings.manage authorization with private no-store responses.
+
+Font mutations require verified settings.manage access and catalog compatibility checks. Build remote font URLs from the fixed provider and allowed families.

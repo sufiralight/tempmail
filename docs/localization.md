@@ -18,7 +18,7 @@ CMS and UI Translations should store relationships against stable language IDs a
 
 Verified Super Admins use Localization → Fonts to search the curated Google Fonts catalog, preview a language and assign body and heading families independently. The manifest in config/typography.php defines allowed family identifiers and primary writing system compatibility. Google Fonts CSS API availability was checked for the 13 families at normal weights 400 and 600. Script compatibility is curated metadata and does not certify complete glyph coverage or shaping. Urdu uses a dedicated Nastaliq candidate and Persian has a separate preview sample. Korean and Japanese may still require platform fallback for individual characters.
 
-Assignments reference language IDs, use enumerated fallback stacks and can be reset to inherited typography. Inheritance preserves Geist for Latin, Cyrillic and Vietnamese and selects a compatible active Noto family for other supported writing systems. Deactivation rejects families with explicit assignments. Inactive languages remain editable without becoming public. CMS previews should resolve typography using the edited language ID and apply direction separately.
+Assignments reference language IDs, use enumerated fallback stacks and can be reset to inherited typography. Inheritance uses the configured writing-system defaults described below. Deactivation rejects families with explicit assignments. Inactive languages remain editable without becoming public. CMS previews should resolve typography using the edited language ID and apply direction separately.
 
 Public layouts receive typography only from the existing locale resolver. The application constructs a fixed-host CSS API URL with only the resolved family and weight pairs and deduplicates pairs in one stylesheet. The stylesheet loads asynchronously with display=swap. Local Geist and browser fallbacks remain available. Google receives the browser IP and standard request metadata when a remote font loads. Assign system typography and deactivate unassigned remote families when third-party requests are prohibited. No Google API key or runtime metadata fetch is needed. Registry reads use the database directly, so updates do not require cache clearing.
 
@@ -38,7 +38,7 @@ Missing means no locale-specific value. Draft and Needs review are private. Tran
 
 Editors can access inactive languages, with direction and typography derived from Languages and Fonts. Store long-form CMS content and SEO translations in their owning modules. Back up the database and apply the Languages migration before UI Translations. The Fonts style migration is independent. An unavailable translation schema returns HTTP 503 in the console and falls back to the existing source on public pages. Verify a published translation and a draft in an active locale after deployment.
 
-The Languages entry appears inside the Admin Console for active, verified Super Admins with settings.manage. See [navigation contexts](components.md#navigation-contexts). The authorized installer records the initial Super Admin's email as verified during account creation.
+The Languages and Fonts entries appear inside the Admin Console for active, verified Super Admins with settings.manage. See [navigation contexts](components.md#navigation-contexts). The authorized installer records the initial Super Admin's email as verified during account creation.
 
 As verified on 2026-11-14, the local database has the language and base typography migrations. Fonts style and UI Translations are pending. Normal font assignments work without the style column. Italic requires it, and UI Translations returns HTTP 503 until its schema exists. Verify the target independently and follow the [schema recovery procedure](deployment.md#schema-recovery).
 
@@ -51,3 +51,13 @@ The public selector saves an intentional choice in the existing session. Opening
 The legacy UI Translations URL redirects to Languages when the new editor schema is available. Existing filtered links and writes retain their route and authorization. The additive homepage draft migration requires the UI Translations tables. Apply both during a controlled release on an installation missing those tables. Older published values remain in place.
 
 Run isolated browser QA for browser preferences, manual switching, direction, draft preview, publishing and stale-editor recovery.
+
+## Multiscript typography
+
+Fonts is available from Admin Console and from the selected language. The locale registry determines direction independently of typography. An explicit body or heading assignment takes precedence over a saved writing-system default and the compatible catalog default. Reset removes the language assignment. System fallback remains readable while remote assets load. The catalog and mappings live in [typography configuration](../config/typography.php).
+
+Latin uses local Geist Sans with Inter available as an alternative. Arabic, Persian and Urdu default to Noto Sans Arabic. The Arabic catalog includes Naskh and Kufi, while Urdu offers Nastaliq. Hebrew uses its own Noto Sans family. Cyrillic and Greek use Noto Sans, while Indic, Thai and East Asian languages use their dedicated script or regional families. Geist Mono remains the technical font. Use LTR isolation for addresses and tokens in RTL previews.
+
+Preview changes are scoped to the sample until Save. Local Geist is bundled by Vite. The existing fixed Google Fonts endpoint loads only selected remote families and weights with display=swap. Font assets retain their upstream licenses. Browser QA should verify actual glyph coverage and clipping, particularly for Nastaliq.
+
+The additive font_script_defaults table stores a writing system key and a catalog family reference. Deploy its migration from a verified backup after checking the target schema. The existing style migration remains separate. Existing locale assignments remain intact. The new default editor is unavailable until the table exists. Font writes use verified settings.manage access, server-side compatibility checks, and audit events.

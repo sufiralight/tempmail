@@ -30,6 +30,8 @@ final class FontController
         return view('workspace.fonts', [
             'filters' => $filters, 'catalog' => $catalog, 'languages' => $languages,
             'language' => $language, 'script' => $script, 'fonts' => $fonts,
+            'inherited' => $this->typography->inherited($script),
+            'defaultsReady' => $this->typography->defaultsReady(),
             'stylesReady' => $this->typography->stylesReady(),
             'italicFamilies' => array_keys(array_filter($catalog, fn (array $scripts, string $family): bool => in_array('italic', $this->typography->styles($family), true), ARRAY_FILTER_USE_BOTH)),
             'stylesheet' => $this->typography->stylesheet($fonts),
@@ -75,6 +77,27 @@ final class FontController
         return to_route('admin.fonts.index', ['language' => $language])->with('status', 'Font assignment saved.');
     }
 
+    public function saveDefault(Request $request, int $language): RedirectResponse
+    {
+        abort_unless($this->typography->ready() && $this->typography->defaultsReady(), 503);
+        $data = $request->validate(['default_family_id' => 'required|integer']);
+        DB::transaction(function () use ($request, $language, $data): void {
+            $family = DB::table('font_families')->lockForUpdate()->find($data['default_family_id']);
+            $locale = DB::table('languages')->lockForUpdate()->find($language);
+            abort_if($locale === null, 404);
+            $script = $this->typography->script($locale->code);
+            if (! $family?->is_active || ! in_array($script, config('typography.families')[$family->name] ?? [], true)) {
+                throw ValidationException::withMessages(['default_family_id' => 'Select a compatible active font.']);
+            }
+            DB::table('font_script_defaults')->upsert([
+                ['script' => $script, 'font_family_id' => $family->id],
+            ], ['script'], ['font_family_id']);
+            $this->audit->record($request->user(), 'font.default_changed', 'language', $language, ['script' => $script]);
+        }, 3);
+
+        return to_route('admin.fonts.index', ['language' => $language])->with('status', 'Writing system default saved.');
+    }
+
     public function reset(Request $request, int $language, string $role): RedirectResponse
     {
         abort_unless($this->typography->ready(), 503);
@@ -96,6 +119,10 @@ final class FontController
             abort_if(DB::table('font_families')->lockForUpdate()->find($family) === null, 404);
             if (! $active && DB::table('font_assignments')->where('font_family_id', $family)->exists()) {
                 throw ValidationException::withMessages(['is_active' => 'Reset or replace this family’s assignments before deactivating it.']);
+            }
+            if (! $active && $this->typography->defaultsReady()
+                && DB::table('font_script_defaults')->where('font_family_id', $family)->exists()) {
+                throw ValidationException::withMessages(['is_active' => 'Replace this writing system default before deactivating it.']);
             }
             DB::table('font_families')->where('id', $family)->update(['is_active' => $active]);
             $this->audit->record($request->user(), $active ? 'font.activated' : 'font.deactivated', 'font', $family);

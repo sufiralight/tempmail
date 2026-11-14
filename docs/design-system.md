@@ -62,3 +62,5 @@ Use Vercel’s hierarchy to make location, purpose, primary action, required att
 Branding pairs asset settings with contextual previews on desktop and places each preview after its settings on narrow screens.
 
 The homepage editor pairs canonical English with localized fields and stacks them at narrow widths. Draft and publish have distinct actions.
+
+Use resolved interface typography for localized surfaces and Geist Mono for technical values. Keep direction tied to the language registry.
