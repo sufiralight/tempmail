@@ -549,6 +549,31 @@ class AuthenticationTest extends TestCase
         Notification::assertSentTo($admin, VerifyEmail::class, fn (VerifyEmail $mail) => str_starts_with($mail->toMail($admin)->actionUrl, 'https://mail.example.test/email/verify/'));
     }
 
+    public function test_installation_founder_is_protected_even_with_another_super_admin(): void
+    {
+        $peer = User::factory()->create(['is_super_admin' => true]);
+        $founder = User::factory()->create(['is_super_admin' => true]);
+        DB::table('workspace_installation')->insert([
+            'id' => 1, 'operation_id' => (string) Str::uuid(),
+            'initial_admin_id' => $founder->id, 'completed_at' => now(),
+        ]);
+        $path = '/admin/users/'.$founder->id;
+        $this->actingAs($founder)->get('/dashboard')->assertOk();
+        $this->get('/admin')->assertOk();
+        $this->get('/admin/users')->assertOk()->assertSee('Founder');
+        $this->get($path)->assertOk()->assertSee('Founder')->assertDontSee('Save access');
+        $this->patchJson($path, ['role' => 'admin', 'active' => true, 'confirmed' => true])->assertUnprocessable();
+        $this->actingAs($peer)->patchJson($path, ['role' => 'super_admin', 'active' => false, 'confirmed' => true])->assertUnprocessable();
+        $this->deleteJson($path)->assertMethodNotAllowed();
+        $this->assertTrue($founder->fresh()->isSuperAdmin());
+        $this->assertTrue($founder->fresh()->is_active);
+        $this->assertDatabaseHas('administrative_audits', [
+            'actor_id' => $peer->id, 'target_id' => $founder->id,
+            'action' => 'user.change_denied', 'metadata' => '{"reason":"protected_founder"}',
+        ]);
+        $this->patchJson('/admin/users/'.$peer->id, ['role' => 'admin', 'active' => true, 'confirmed' => true])->assertRedirect();
+    }
+
     public function test_workspace_permissions_changes_and_audits(): void
     {
         $owner = User::factory()->create();

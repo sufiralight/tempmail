@@ -370,8 +370,9 @@ class InstallerTest extends TestCase
         $this->assertSame('sqlite', $environment['DB_CONNECTION']);
         $this->assertSame(realpath($path), $environment['DB_DATABASE']);
         $pdo = new PDO('sqlite:'.$path);
-        $admin = $pdo->query('SELECT email, is_super_admin FROM users')->fetch(PDO::FETCH_ASSOC);
-        $this->assertSame(['email' => 'owner@example.test', 'is_super_admin' => 1], $admin);
+        $admin = $pdo->query('SELECT id, email, is_super_admin FROM users')->fetch(PDO::FETCH_ASSOC);
+        $this->assertSame((int) $admin['id'], (int) $pdo->query('SELECT initial_admin_id FROM workspace_installation WHERE id = 1')->fetchColumn());
+        $this->assertSame(['email' => 'owner@example.test', 'is_super_admin' => 1], array_diff_key($admin, ['id' => true]));
         $this->get($url)->assertNotFound();
     }
 

@@ -13,19 +13,32 @@ final class WorkspaceAdministration
 
     public const ACTIONS = ['user.role_changed', 'user.activated', 'user.deactivated', 'user.change_denied', 'settings.updated'];
 
+    public function founderId(): ?int
+    {
+        $id = DB::table('workspace_installation')->where('id', 1)->value('initial_admin_id');
+
+        return $id === null ? null : (int) $id;
+    }
+
     public function updateUser(User $actor, User $target, WorkspaceRole $role, bool $active): void
     {
-        $denied = DB::transaction(function () use ($actor, $target, $role, $active): bool {
+        $error = DB::transaction(function () use ($actor, $target, $role, $active): ?string {
             $this->lock();
             $actor = User::query()->findOrFail($actor->id);
             $target = User::query()->findOrFail($target->id);
             abort_unless($actor->can('manage', $target), 403);
 
+            if ((int) $target->id === $this->founderId() && (! $active || $role !== WorkspaceRole::SuperAdmin)) {
+                $this->audit->record($actor, 'user.change_denied', 'user', $target->id, ['reason' => 'protected_founder']);
+
+                return 'The founder must remain an active Super Admin.';
+            }
+
             if ($target->isSuperAdmin() && $target->is_active && (! $active || $role !== WorkspaceRole::SuperAdmin)
                 && ! User::query()->where('is_super_admin', true)->where('is_active', true)->whereKeyNot($target->id)->exists()) {
                 $this->audit->record($actor, 'user.change_denied', 'user', $target->id, ['reason' => 'last_active_super_admin']);
 
-                return true;
+                return 'Keep at least one active Super Admin.';
             }
 
             $previous = $target->workspaceRole();
@@ -43,11 +56,11 @@ final class WorkspaceAdministration
                 $this->audit->record($actor, $active ? 'user.activated' : 'user.deactivated', 'user', $target->id);
             }
 
-            return false;
+            return null;
         }, 3);
 
-        if ($denied) {
-            throw ValidationException::withMessages(['role' => 'Keep at least one active Super Admin.']);
+        if ($error !== null) {
+            throw ValidationException::withMessages(['role' => $error]);
         }
     }
 

@@ -50,3 +50,5 @@ See [UI Translations](localization.md#ui-translations) for key registration, sta
 Verify first sign-in to Admin Console for the installer-created Super Admin and require fresh verification after an email change.
 
 Keep the Roles & permissions matrix aligned with the [authorization contracts](authorization.md). Verify role counts, direct URL access, and user assignment protections after changes.
+
+Exercise founder self-demotion, peer deactivation, direct requests, audit events and workspace-to-console navigation with disposable accounts. Include a fixture without an installation record to verify last-active protection independently.

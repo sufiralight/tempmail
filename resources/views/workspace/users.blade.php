@@ -32,7 +32,7 @@
                             </div>
                         </div>
                     </td>
-                    <td>{{ $account->workspaceRole()->label() }}</td>
+                    <td>{{ $account->workspaceRole()->label() }} @if((int) $account->id === $founderId)<x-ui.badge>Founder</x-ui.badge>@endif</td>
                     <td><x-ui.badge>{{ $account->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
                 </tr>
             @endforeach

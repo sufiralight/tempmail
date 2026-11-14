@@ -7,6 +7,9 @@
             <div><dt class="ui-help">Verification</dt><dd>{{ $account->hasVerifiedEmail() ? 'Verified' : 'Pending' }}</dd></div>
         </dl>
     </x-ui.card>
+    @if((int) $account->id === $founderId)
+        <x-ui.alert variant="info" title="Founder">The installation founder’s role and account status are protected.</x-ui.alert>
+    @else
     @can('manage', $account)
         <x-ui.card title="Account access">
             <form method="post" action="{{ route('admin.users.update', $account, absolute: false) }}" class="grid gap-4">
@@ -26,4 +29,5 @@
             </form>
         </x-ui.card>
     @endcan
+    @endif
 </x-layouts.workspace>

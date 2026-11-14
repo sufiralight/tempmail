@@ -17,3 +17,11 @@ The console exposes /admin, /admin/users, /admin/users/{user}, /admin/roles, /ad
 Run the additive workspace administration migration in a controlled release before opening authenticated routes on existing installations. New installs apply it through the existing installer. See [Database](database.md) and [Authentication](authentication.md).
 
 The Roles & permissions page derives its matrix from WorkspaceRole and counts assigned accounts, including inactive accounts, with one grouped database query. The Languages, Fonts and UI Translations rows describe routes guarded by settings.manage. Personal profile and media operations retain their ownership and state checks. Assign roles through Users Management.
+
+## Founder Super Admin
+
+The singleton installation record identifies the Founder through initial_admin_id. Finalization writes this record and the first Super Admin in the same transaction. Founder is a protected identity within the Super Admin role. Regular Super Admins retain existing role management authority. Admins have limited console access and Members use the workspace.
+
+Role and activation changes acquire the shared workspace lock, reload the actor and target, and reject founder demotion or deactivation with an audit event. The installation foreign key protects hard deletion and the application has no account deletion or suspension endpoint. Future lifecycle operations must enforce founder protection under the same lock. Last active Super Admin protection applies independently. Founder accounts use normal authentication and session controls.
+
+If the installation record is missing or its provenance is uncertain, open an operator-controlled recovery window. Verify the deployment database, take a recoverable backup and validate the original installation identity against trusted backups and installation records. Restore the verified singleton and original administrator reference from that evidence through controlled database recovery. If the original identity cannot be verified, leave founder unassigned and retain last active Super Admin protection. Escalate to the deployment operator for identity recovery.

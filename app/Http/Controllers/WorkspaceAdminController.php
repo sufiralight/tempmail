@@ -23,7 +23,7 @@ final class WorkspaceAdminController extends Controller
         ]);
     }
 
-    public function users(Request $request): View
+    public function users(Request $request, WorkspaceAdministration $administration): View
     {
         $filters = $request->validate(['q' => 'nullable|string|max:100', 'role' => 'nullable|in:user,admin,super_admin', 'status' => 'nullable|in:active,inactive']);
         $query = User::query()->select('id', 'name', 'email', 'role', 'is_super_admin', 'is_active', 'email_verified_at', 'avatar_media_id');
@@ -41,12 +41,12 @@ final class WorkspaceAdminController extends Controller
             $query->where('is_active', $filters['status'] === 'active');
         }
 
-        return view('workspace.users', ['users' => $query->orderBy('id')->paginate(20)->appends($filters), 'filters' => $filters]);
+        return view('workspace.users', ['users' => $query->orderBy('id')->paginate(20)->appends($filters), 'filters' => $filters, 'founderId' => $administration->founderId()]);
     }
 
-    public function user(User $user): View
+    public function user(User $user, WorkspaceAdministration $administration): View
     {
-        return view('workspace.user', ['account' => $user]);
+        return view('workspace.user', ['account' => $user, 'founderId' => $administration->founderId()]);
     }
 
     public function updateUser(UpdateWorkspaceUser $request, User $user, WorkspaceAdministration $admin): RedirectResponse

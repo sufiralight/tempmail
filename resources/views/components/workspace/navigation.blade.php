@@ -24,6 +24,7 @@
 
         if (! request()->routeIs('admin', 'admin.*')) {
             $groups['Administration'] = [['admin', 'Admin Console', 'shield']];
+            unset($groups['Localization']);
         }
     }
 @endphp
