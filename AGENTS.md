@@ -60,3 +60,5 @@ Keep [homepage publishing](docs/localization.md#homepage-publishing) separate fr
 Use the [typography contract](docs/localization.md#multiscript-typography) for script defaults, language overrides and technical LTR text.
 
 Keep /admin/fonts as the authoritative Typography Studio. See [Typography Studio](docs/localization.md#typography-studio).
+
+Keep language availability and homepage publishing in Localization Studio. Link to Typography Studio for locale font settings. See [Localization](docs/localization.md#homepage-publishing).

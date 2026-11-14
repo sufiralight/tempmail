@@ -1,7 +1,5 @@
-<x-layouts.workspace :title="$language->name">
-    <x-ui.button :href="route('admin.languages.index')" variant="ghost">Back to Languages</x-ui.button>
-    <x-ui.button :href="route('admin.languages.homepage', $language->id)" variant="outline">Homepage content</x-ui.button>
-    <x-ui.button :href="route('admin.fonts.index', ['language' => $language->id])" variant="ghost">Fonts</x-ui.button>
+<x-layouts.workspace :title="$language->native_name">
+    <x-workspace.locale-navigation :$language />
     <x-ui.card>
         <dl class="mb-4 grid grid-cols-2 gap-2 text-sm">
             <dt>Locale code</dt><dd><code>{{ $language->code }}</code></dd>

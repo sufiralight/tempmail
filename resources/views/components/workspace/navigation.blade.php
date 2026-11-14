@@ -19,7 +19,7 @@
 
         if ($user->can('settings.manage')) {
             $groups['Localization'] = [
-                ['admin.languages.index', 'Languages', 'settings', 'admin.languages.*', 'admin.ui-translations.*'],
+                ['admin.languages.index', 'Localization Studio', 'settings', 'admin.languages.*', 'admin.ui-translations.*'],
                 ['admin.fonts.index', 'Typography Studio', 'type', 'admin.fonts.*'],
             ];
         }

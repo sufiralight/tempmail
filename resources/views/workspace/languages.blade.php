@@ -1,4 +1,4 @@
-<x-layouts.workspace title="Languages" description="Manage available languages, default locale, and language visibility across your application.">
+<x-layouts.workspace title="Localization Studio" description="Manage available languages, default locale, and language visibility across your application.">
     <div class="flex flex-wrap gap-2">
         <x-ui.badge>{{ $total }} total</x-ui.badge>
         <x-ui.badge>{{ $active }} active</x-ui.badge>
@@ -37,7 +37,7 @@
                 <x-slot:head>
                     <tr>
                         <th scope="col"><input type="checkbox" aria-label="Select all languages on this page" x-bind:checked="selected.length === {{ $languages->count() }}" x-on:change="selected = $event.target.checked ? Array.from($root.querySelectorAll('[name=&quot;languages[]&quot;]'), item => item.value) : []"></th>
-                        @foreach(['Language', 'Native name', 'Code', 'Direction', 'Status', 'Default', 'Homepage', 'Actions'] as $heading)
+                        @foreach(['Languages', 'Code', 'Direction', 'Status', 'Default', 'Homepage', 'Actions'] as $heading)
                             <th scope="col">{{ $heading }}</th>
                         @endforeach
                     </tr>
@@ -45,14 +45,14 @@
                 @foreach($languages as $language)
                     <tr>
                         <td><input type="checkbox" name="languages[]" value="{{ $language->id }}" x-model="selected" aria-label="Select {{ $language->name }}"></td>
-                        <th scope="row">{{ $language->name }}</th>
-                        <td lang="{{ $language->code }}" dir="{{ $language->direction }}">{{ $language->native_name }}</td>
+                        <th scope="row"><a class="underline-offset-4 hover:underline" href="{{ route('admin.languages.show', $language->id) }}" lang="{{ $language->code }}" dir="{{ $language->direction }}">{{ $language->native_name }}</a></th>
+
                         <td><code>{{ $language->code }}</code></td>
                         <td>{{ strtoupper($language->direction) }}</td>
                         <td><x-ui.badge>{{ $language->is_active ? 'Active' : 'Inactive' }}</x-ui.badge></td>
                         <td>{{ $defaultId === (int) $language->id ? 'Default' : '—' }}</td>
                         <td>{{ $progress === null ? 'Schema unavailable' : ($progress[$language->id] ?? 0).' / '.$homepageTotal.' published' }}</td>
-                        <td><x-ui.button :href="route('admin.languages.homepage', $language->id)" variant="ghost">Homepage content</x-ui.button><x-ui.button :href="route('admin.languages.show', $language->id)" variant="ghost">View and edit</x-ui.button></td>
+                        <td><x-ui.button :href="route('admin.languages.homepage', $language->id)" variant="ghost">Edit homepage</x-ui.button></td>
                     </tr>
                 @endforeach
             </x-ui.table>

@@ -29,3 +29,5 @@ Preview the effective font in localized controls and isolate addresses and ident
 Keep language editing and the sampled appearance together. Scope preview width and theme controls to the sample.
 
 Keep [Typography Studio](../docs/localization.md#typography-studio) centered on language editing and font comparison. Show active compatible families with the same locale sample. Place catalog mutations under Family settings.
+
+Use the shared language navigation for Localization Studio Overview and Homepage. Keep locale typography in Typography Studio. See [Localization](../docs/localization.md#homepage-publishing).

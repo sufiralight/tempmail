@@ -1,4 +1,4 @@
-<x-layouts.workspace title="UI Translations" description="Manage interface translations across your supported languages.">
+<x-layouts.workspace title="Translation catalog" description="Manage interface translations across your supported languages.">
     <x-ui.card>
         <form method="get" action="{{ route('admin.ui-translations.index', absolute: false) }}" class="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_2fr_auto]">
             <x-ui.select name="language" label="Language">

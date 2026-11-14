@@ -1,9 +1,6 @@
-<x-layouts.workspace :title="$language->native_name.' · Homepage content'">
-    <nav aria-label="Language settings" class="flex flex-wrap gap-2">
-        <x-ui.button :href="route('admin.languages.show', $language->id)" variant="ghost">Overview</x-ui.button>
-        <x-ui.button :href="route('admin.fonts.index', ['language' => $language->id])" variant="ghost">Fonts</x-ui.button>
-        <x-ui.button :href="route('admin.languages.preview', $language->id)" variant="outline">Preview saved draft</x-ui.button>
-    </nav>
+<x-layouts.workspace :title="$language->native_name.' · Homepage'">
+    <x-workspace.locale-navigation :$language />
+    <x-ui.button :href="route('admin.languages.preview', $language->id)" variant="outline">Preview saved draft</x-ui.button>
     <p class="ui-help">Empty published fields use canonical English. An inactive language stays hidden even after publishing.</p>
     <form method="post" action="{{ route('admin.languages.homepage.save', $language->id) }}" class="grid gap-4">
         @csrf

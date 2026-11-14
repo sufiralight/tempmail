@@ -38,13 +38,13 @@ Missing means no locale-specific value. Draft and Needs review are private. Tran
 
 Editors can access inactive languages, with direction and typography derived from Languages and Fonts. Store long-form CMS content and SEO translations in their owning modules. Back up the database and apply the Languages migration before UI Translations. The Fonts style migration is independent. An unavailable translation schema returns HTTP 503 in the console and falls back to the existing source on public pages. Verify a published translation and a draft in an active locale after deployment.
 
-The Languages and Fonts entries appear inside the Admin Console for active, verified Super Admins with settings.manage. See [navigation contexts](components.md#navigation-contexts). The authorized installer records the initial Super Admin's email as verified during account creation.
+The Localization Studio and Typography Studio entries appear inside the Admin Console for active, verified Super Admins with settings.manage. See [navigation contexts](components.md#navigation-contexts). The authorized installer records the initial Super Admin's email as verified during account creation.
 
 As verified on 2026-11-14, the local database has the language and base typography migrations. Fonts style and UI Translations are pending. Normal font assignments work without the style column. Italic requires it, and UI Translations returns HTTP 503 until its schema exists. Verify the target independently and follow the [schema recovery procedure](deployment.md#schema-recovery).
 
 ## Homepage publishing
 
-Open a language under Languages and select Homepage content. The editor shows the canonical English configuration beside editable text. Save draft writes separate values without replacing published copy. Preview shows the saved draft on a protected, uncached homepage. Publish applies all submitted fields in one transaction, checks the editor revision and uses canonical English for blank fields. Publishing does not activate an inactive language. The list counts only published, nonempty values for registered homepage keys.
+Open a language in Localization Studio and select Homepage. The list uses native language names and links directly to the editor. The editor shows the canonical English configuration beside editable text. Save draft writes separate values without replacing published copy. Preview shows the saved draft on a protected, uncached homepage. Publish applies all submitted fields in one transaction, checks the editor revision and uses canonical English for blank fields. Publishing does not activate an inactive language. The list counts only published, nonempty values for registered homepage keys.
 
 The public selector saves an intentional choice in the existing session. Opening a localized URL leaves that preference intact. Localized responses are private and vary by Accept-Language and Cookie. The public homepage uses the published dictionary and immutable English fallback.
 

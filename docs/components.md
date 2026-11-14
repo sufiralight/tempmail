@@ -46,7 +46,7 @@ Users is the primary Admin Console destination for accounts. Its secondary navig
 
 The media picker emits media-selected with ID, preview, filename and metadata, and media-cleared when its selection is removed. Branding scopes each listener to its own field.
 
-Localization exposes separate Languages and Fonts entries. Open a language to reach Homepage content or jump to Fonts with that language selected.
+The sidebar exposes Localization Studio and Typography Studio separately. Localization Studio opens the Languages list. Language pages share Overview and Homepage links plus a shortcut to Typography Studio.
 
 The Fonts preview uses shared buttons and inputs. Technical email and message IDs remain isolated left-to-right.
 
